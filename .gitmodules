@@ -1,6 +1,9 @@
 [submodule "RareUpdater/quazip"]
-	path = RareUpdater/quazip
+	path = RareUpdater/external/quazip
 	url = https://github.com/stachenov/quazip.git
 [submodule "RareUpdater/zlib"]
-	path = RareUpdater/zlib
+	path = RareUpdater/external/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "RareUpdater/quazip-v0.9.x"]
+	path = RareUpdater/external/quazip-v0.9.x
+	url = https://github.com/stachenov/quazip.git

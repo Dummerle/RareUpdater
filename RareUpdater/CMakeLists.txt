@@ -13,27 +13,52 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS
     Core
+    Gui
     Network
-    Zlib
+    Qml
     Quick
+    QuickControls2
+    Svg
+    Xml
+    QuickCompiler
+    QmlWorkerScript
+    QmlImportScanner
     LinguistTools
     REQUIRED
 )
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
     Core
+    Gui
     Network
+    Qml
     Quick
-    Zlib
+    QuickControls2
+    Svg
+    Xml
+    QuickCompiler
+    QmlWorkerScript
+    QmlImportScanner
     LinguistTools
     REQUIRED
 )
 
+if(${QT_VERSION_MAJOR} EQUAL 5)
+    find_package(QT NAMES Qt5 COMPONENTS Zlib REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Zlib REQUIRED)
+endif()
+
+if(${QT_VERSION_MAJOR} EQUAL 6)
+    find_package(QT NAMES Qt6 COMPONENTS Core5Compat REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core5Compat REQUIRED)
+endif()
+
 set(TS_FILES RareUpdater_de_DE.ts)
 
 set(PROJECT_SOURCES
-        main.cpp
-        qml.qrc
-        ${TS_FILES}
+    backend.cpp backend.h
+    main.cpp
+    qml.qrc
+    ${TS_FILES}
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -66,25 +91,67 @@ endif()
 target_compile_definitions(RareUpdater
   PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
 target_link_libraries(RareUpdater PRIVATE
-  Qt${QT_VERSION_MAJOR}::Core
-  Qt${QT_VERSION_MAJOR}::Network
-  Qt${QT_VERSION_MAJOR}::Zlib
-  Qt${QT_VERSION_MAJOR}::Quick
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::Network
+    Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::Quick
+    Qt${QT_VERSION_MAJOR}::QuickControls2
+    Qt${QT_VERSION_MAJOR}::Svg
+    Qt${QT_VERSION_MAJOR}::Xml
 )
 
+# Only use static macro if linking with static qt
+get_target_property(QT_TARGET_TYPE Qt5::Core TYPE)
+if(${QT_TARGET_TYPE} STREQUAL "STATIC_LIBRARY")
+  include(cmake/QtStaticCMake.cmake)
+
+  qt_generate_plugin_import(RareUpdater VERBOSE)
+
+  # EXTRA_PLUGIN are the one required by plugin loaded by qt_generate_plugin_import
+  # It's not automatic yet :( All this workflow might change in future version of qt
+  # with better and better cmake support
+  qt_generate_qml_plugin_import(RareUpdater
+    QML_SRC ${CMAKE_CURRENT_SOURCE_DIR}/qml
+    EXTRA_PLUGIN
+      QtQuickVirtualKeyboardPlugin
+      QtQuickVirtualKeyboardSettingsPlugin
+      QtQuickVirtualKeyboardStylesPlugin
+      QmlFolderListModelPlugin
+      QQuickLayoutsPlugin
+    VERBOSE
+  )
+
+endif()
+
+# This target needs to be linked after qt_generate_qml_plugin_import call.
+# This is hiding a bug somewhere ...
+if(TARGET Qt5::QmlWorkerScript)
+  target_link_libraries(RareUpdater PRIVATE Qt5::QmlWorkerScript)
+endif()
+
+if(${QT_VERSION_MAJOR} EQUAL 5)
+    target_link_libraries(RareUpdater PRIVATE Qt${QT_VERSION_MAJOR}::Zlib)
+endif()
+if(${QT_VERSION_MAJOR} EQUAL 6)
+    target_link_libraries(RareUpdater PRIVATE Qt${QT_VERSION_MAJOR}::Core5Compat)
+endif()
+
 # OpenSSL stuff
-set(OPENSSL_ROOT_DIR "C:\\Qt\\Tools\\OpenSSL\\Win_x64")
 set(OPENSSL_USE_STATIC_LIBS ON)
 
 include(FindOpenSSL)
-find_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 target_link_libraries(RareUpdater PRIVATE ${CMAKE_DL_LIBS} OpenSSL::SSL OpenSSL::Crypto)
 
 # QuaZip stuff
+set(QUAZIP_QT_MAJOR_VERSION ${QT_VERSION_MAJOR})
+if(${QT_VERSION_MAJOR} EQUAL 5)
+    set(QUAZIP_USE_QT_ZLIB ON)
+endif()
 set(BUILD_SHARED_LIBS OFF)
-set(QUAZIP_USE_QT_ZLIB ON)
 
-add_subdirectory(quazip)
+add_subdirectory(external/quazip)
 target_link_libraries(RareUpdater PRIVATE QuaZip::QuaZip)
 
 set_target_properties(RareUpdater PROPERTIES

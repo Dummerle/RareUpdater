@@ -78,9 +78,9 @@ Window {
 
         Button {
             id: install_button
+            objectName: "install_button"
             text: qsTr("Install")
             onClicked: root.on_install()
-
         }
 
     }
