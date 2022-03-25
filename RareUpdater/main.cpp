@@ -5,19 +5,7 @@
 #include <QTranslator>
 #include <string>
 
-class Backend : public QObject{
-
-
-public:
-    Backend(){
-
-    }
-public slots:
-    void download_python(){
-        printf("python install");
-    }
-};
-
+#include "backend.h"
 
 int main(int argc, char *argv[])
 {
@@ -46,8 +34,11 @@ int main(int argc, char *argv[])
     engine.load(url);
 
     Backend backend;
-    QObject *rootObject = engine.rootObjects().first();
-    QObject *install_python = rootObject->findChild<QObject*>("install_button");
+
+    QList<QObject*> rootObjects = engine.rootObjects();
+    QObject* first = rootObjects.first();
+    QObject *install_python = first->findChild<QObject*>("install_button");
+
     QObject::connect(install_python, SIGNAL(clicked()),
                      &backend, SLOT(download_python()));
 
