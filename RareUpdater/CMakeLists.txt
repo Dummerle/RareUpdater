@@ -60,6 +60,7 @@ set(PROJECT_SOURCES
     external/QuickDownload/src/quickdownload.cpp
     external/QuickDownload/src/quickdownload.h
 #    external/QuickDownload/register_quickdownload.h
+    quickprocess.h quickprocess.cpp
     backend.cpp backend.h
     main.cpp
     qml.qrc

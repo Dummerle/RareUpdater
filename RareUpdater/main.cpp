@@ -7,6 +7,7 @@
 
 #include "backend.h"
 #include "external/QuickDownload/src/quickdownload.h"
+#include "quickprocess.h"
 
 int main(int argc, char *argv[])
 {
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
     }
 
     qmlRegisterType<QuickDownload>("QuickDownload", 1, 0, "Download");
+    qmlRegisterType<QuickProcess>("QuickProcess", 1, 0, "Process");
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));

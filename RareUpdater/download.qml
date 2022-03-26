@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Qt.labs.platform 1.1
 import QuickDownload 1.0
+import QuickProcess 1.0
 
 Item {
     Download {
@@ -32,7 +33,7 @@ Item {
         destination: StandardPaths.writableLocation(StandardPaths.TempLocation) + "/" + url_parts[url_parts.length - 1]
 
         overwrite: true
-        running: true
+        running: !download_python.running
 
         followRedirects: true
         onRedirected: console.log('Redirected',url,'->',redirectUrl)
@@ -40,7 +41,17 @@ Item {
         onStarted: console.log('Started download',url)
         onError: console.error(errorString)
         onProgressChanged: console.log(url,'progress:',progress)
-        onFinished: console.info(url,'done')
+        onFinished: () => {
+                        console.info(url,'done')
+                        test_process.start("echo", ["testtesttesttesttest"])
+                    }
     }
 
+    Process {
+        id: test_process
+        onReadyRead: () => {
+                         console.info(readAll())
+                     }
+    }
 }
+
