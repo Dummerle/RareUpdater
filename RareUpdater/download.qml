@@ -7,7 +7,9 @@ Item {
         id: download_python
 
         url: "https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip"
-        destination: StandardPaths.writableLocation(StandardPaths.TempLocation) + "/python.zip"
+        property string this_url: url
+        property var url_parts: this_url.split('/')
+        destination: StandardPaths.writableLocation(StandardPaths.TempLocation) + "/" + url_parts[url_parts.length - 1]
 
         overwrite: true
         running: true
@@ -25,7 +27,9 @@ Item {
         id: download_get_pip
 
         url: "https://bootstrap.pypa.io/get-pip.py"
-        destination: StandardPaths.writableLocation(StandardPaths.TempLocation) + "/get-pip.py"
+        property string this_url: url
+        property var url_parts: this_url.split('/')
+        destination: StandardPaths.writableLocation(StandardPaths.TempLocation) + "/" + url_parts[url_parts.length - 1]
 
         overwrite: true
         running: true
