@@ -1,6 +1,7 @@
 ﻿import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.12
+import Qt.labs.platform 1.1
 
 import "install.js" as Install
 
@@ -12,7 +13,7 @@ Window {
     title: qsTr("Rare updater")
 
     property bool is_installing: false
-    property var progress: 0
+    property real progress: 0
 
     Timer  {
         interval: 1000
@@ -80,7 +81,9 @@ Window {
             id: install_button
             objectName: "install_button"
             text: qsTr("Install")
-            onClicked: root.on_install()
+            onClicked: () => {
+                           Qt.createComponent("download.qml").createObject(install_button);
+                       }
         }
 
     }

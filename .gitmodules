@@ -1,9 +1,14 @@
-[submodule "RareUpdater/quazip"]
+[submodule "RareUpdater/external/quazip"]
 	path = RareUpdater/external/quazip
 	url = https://github.com/stachenov/quazip.git
-[submodule "RareUpdater/zlib"]
+	branch = master
+[submodule "RareUpdater/external/zlib"]
 	path = RareUpdater/external/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "RareUpdater/quazip-v0.9.x"]
+[submodule "RareUpdater/external/quazip-v0.9.x"]
 	path = RareUpdater/external/quazip-v0.9.x
 	url = https://github.com/stachenov/quazip.git
+	branch = v0.9.x
+[submodule "RareUpdater/external/QuickDownload"]
+	path = RareUpdater/external/QuickDownload
+	url = https://github.com/Larpon/QuickDownload.git

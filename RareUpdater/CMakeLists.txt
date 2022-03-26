@@ -54,7 +54,12 @@ endif()
 
 set(TS_FILES RareUpdater_de_DE.ts)
 
+#set(QUICKDOWNLOAD_AUTO_REGISTER on)
+
 set(PROJECT_SOURCES
+    external/QuickDownload/src/quickdownload.cpp
+    external/QuickDownload/src/quickdownload.h
+#    external/QuickDownload/register_quickdownload.h
     backend.cpp backend.h
     main.cpp
     qml.qrc
@@ -158,7 +163,15 @@ set_target_properties(RareUpdater PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
 )
+
+get_target_property(QT_TARGET_TYPE Qt5::Core TYPE)
+if(${QT_TARGET_TYPE} STREQUAL "STATIC_LIBRARY")
+    find_package(Qt5QmlImportScanner REQUIRED)
+    qt5_import_qml_plugins(${CMAKE_PROJECT_NAME})
+endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_import_qml_plugins(RareUpdater)

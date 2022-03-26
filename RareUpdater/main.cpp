@@ -6,6 +6,7 @@
 #include <string>
 
 #include "backend.h"
+#include "external/QuickDownload/src/quickdownload.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,6 +24,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    qmlRegisterType<QuickDownload>("QuickDownload", 1, 0, "Download");
 
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));

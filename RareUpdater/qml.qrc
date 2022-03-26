@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>install.js</file>
+        <file>download.js</file>
+        <file>download.qml</file>
     </qresource>
 </RCC>
