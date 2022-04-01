@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>RareLauncher</class>
- <widget class="QDialog" name="RareLauncher">
+ <class>RareUpdater</class>
+ <widget class="QDialog" name="RareUpdater">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>461</width>
-    <height>318</height>
+    <height>340</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -101,6 +101,9 @@
          <property name="text">
           <string/>
          </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item alignment="Qt::AlignRight">
@@ -117,6 +120,10 @@
         </widget>
        </item>
       </layout>
+      <zorder>download_progress</zorder>
+      <zorder>status_label</zorder>
+      <zorder>install</zorder>
+      <zorder>install_options_group</zorder>
      </widget>
      <widget class="QWidget" name="page_2">
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -134,6 +141,26 @@
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="launch_button">
+         <property name="text">
+          <string>Launch</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

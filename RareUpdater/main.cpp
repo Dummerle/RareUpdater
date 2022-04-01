@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     a.setOrganizationName("Rare");
     a.setApplicationName("Rare");
 
-    RareLauncher w;
+    RareUpdater w;
     w.show();
     return a.exec();
 }

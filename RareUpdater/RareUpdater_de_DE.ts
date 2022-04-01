@@ -46,7 +46,27 @@
     </message>
 </context>
 <context>
-    <name>RareLauncher</name>
+    <name>RareUpdater</name>
+    <message>
+        <location filename="rareupdater.cpp" line="51"/>
+        <source>Downloading </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.cpp" line="121"/>
+        <source>Installing pip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.cpp" line="137"/>
+        <source>Installing Rare and dependencies</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.cpp" line="154"/>
+        <source>Launching</source>
+        <translation type="unfinished"></translation>
+    </message>
     <message>
         <location filename="rareupdater.ui" line="14"/>
         <source>RareLauncher</source>
@@ -93,13 +113,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="124"/>
+        <location filename="rareupdater.ui" line="118"/>
+        <source>Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.ui" line="138"/>
         <source>Rare was installed succesfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="108"/>
-        <source>Install</source>
+        <location filename="rareupdater.ui" line="148"/>
+        <source>Launch</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
