@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>stylesheets/Quark/circle-disabled.svg</file>
+        <file>stylesheets/Quark/circle.svg</file>
+        <file>stylesheets/Quark/drop-down.svg</file>
+        <file>stylesheets/Quark/half-square-disabled.svg</file>
+        <file>stylesheets/Quark/half-square.svg</file>
+        <file>stylesheets/Quark/sort-down.svg</file>
+        <file>stylesheets/Quark/sort-up.svg</file>
+        <file>stylesheets/Quark/square-disabled.svg</file>
+        <file>stylesheets/Quark/square.svg</file>
+        <file>stylesheets/Quark/stylesheet.qss</file>
+    </qresource>
+</RCC>
