@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>461</width>
-    <height>340</height>
+    <width>447</width>
+    <height>374</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,6 +42,30 @@
           <string>Installation options</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QComboBox" name="version_combo">
+            <item>
+             <property name="text">
+              <string>1.8.9</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1.8.8</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1.8.7</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1.7.0</string>
+             </property>
+            </item>
+           </widget>
+          </item>
           <item>
            <widget class="QGroupBox" name="optional_group">
             <property name="title">

@@ -23,6 +23,7 @@ RareUpdater::RareUpdater(QWidget *parent)
 
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(downloadFinished(QNetworkReply * )));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
+    // TODO add console
 }
 
 RareUpdater::~RareUpdater() {
@@ -30,18 +31,65 @@ RareUpdater::~RareUpdater() {
 }
 
 void RareUpdater::install() {
+    QString version(ui->version_combo->currentText());
     ui->install->setDisabled(true);
     QStringList urls;
     urls.append("https://bootstrap.pypa.io/get-pip.py");
     urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
-
     for (const auto &u: urls) {
         m_reqList.append(QNetworkRequest(u));
     }
+    QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install rare==" + version);
+    if(ui->pypresence_check->isChecked()){
+        pipInstallCmd += " pypresence";
+    }
+    if(ui->webview_check->isChecked()){
+        pipInstallCmd += " pywebview[cef]";
+    }
 
+    processes.append(m_applFolder + "\\python.exe " +  m_tempFolder + "\\get-pip.py");
+    processes.append(pipInstallCmd);
+    qDebug() << pipInstallCmd;
 
     processRequest(m_reqList.takeFirst());
 }
+
+void RareUpdater::processProcess(QString executable){
+    ui->status_label->setText(tr("Running: ") + executable);
+    install_process = new QProcess(this);
+    install_process->setProcessChannelMode(QProcess::MergedChannels);
+    install_process->setProgram(executable.split(" ")[0]);
+    QStringList proc_args;
+    for(const auto arg: executable.split(" ").mid(1)){
+
+        proc_args.append(arg);
+    }
+    install_process->setArguments(proc_args);
+    connect(install_process, SIGNAL(finished(int,QProcess::ExitStatus)),
+            this, SLOT(processFinished(int,QProcess::ExitStatus)));
+    connect(install_process, SIGNAL(readyReadStandardOutput()),
+            this, SLOT(installLogs()));
+    install_process->start();
+}
+
+void RareUpdater::installLogs(){
+    qDebug() << QString(install_process->readAllStandardOutput());
+}
+
+void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e){
+    if(e == QProcess::ExitStatus::CrashExit){
+        QMessageBox::warning(this, "Error", "Installation failed\n" + QString(install_process->readAllStandardOutput().data()));
+        ui->status_label->setText(tr("Installation failed"));
+        return;
+    }
+    install_process->deleteLater();
+    if(!processes.isEmpty()){
+        processProcess(processes.takeFirst());
+        return;
+    }
+    ui->page_stack->setCurrentIndex(1);
+}
+
 
 void RareUpdater::processRequest(QNetworkRequest request) {
     m_downloadFile = new QFile(m_tempFolder + '\\' + request.url().fileName());
@@ -113,44 +161,12 @@ void RareUpdater::downloadFinished(QNetworkReply *reply) {
         pth.close();
     }
 
-    installPip();
-
-}
-
-void RareUpdater::installPip() {
-    ui->status_label->setText(tr("Installing pip"));
-    get_pip_process = new QProcess(this);
-    get_pip_process->setProgram(m_applFolder + "\\python.exe");
-    QStringList get_pip_args;
-    get_pip_args.append(QString(m_tempFolder + "\\get-pip.py"));
-    get_pip_process->setArguments(get_pip_args);
-    connect(get_pip_process, SIGNAL(finished(int,QProcess::ExitStatus)),
-            this, SLOT(installRare(int,QProcess::ExitStatus)));
-    get_pip_process->start();
-
-}
-
-void RareUpdater::installRare(int exit_code, QProcess::ExitStatus e) {
-    if(exit_code != 0){
-        return;
-    }
-    ui->status_label->setText(tr("Installing Rare and dependencies"));
-    sender()->deleteLater();
-    pip_process = new QProcess(this);
-    pip_process->setProgram(m_applFolder + "\\Scripts\\pip.exe");
-    QStringList pip_args;
-    pip_args.append(QString("install"));
-    pip_args.append(QString("Rare"));
-    pip_process->setArguments(pip_args);
-    pip_process->start();
-    connect(pip_process, SIGNAL(finished(int,QProcess::ExitStatus)),
-            this, SLOT(launch(int,QProcess::ExitStatus)));
-
+    processProcess(processes.takeFirst());
 }
 
 
 void RareUpdater::launch(int exit_code, QProcess::ExitStatus e) {
-    pip_process->deleteLater();
+    install_process->deleteLater();
     ui->status_label->setText(tr("Launching"));
     ui->page_stack->setCurrentIndex(1);
 }

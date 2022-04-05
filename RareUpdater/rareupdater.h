@@ -32,17 +32,18 @@ public slots:
     void downloadReadyRead();
     void downloadProgress(qint64 read, qint64 total);
     void downloadFinished(QNetworkReply* reply);
+    void installLogs();
 
 private slots:
     void launch(int exit_code, QProcess::ExitStatus e);
     void launch();
     void cancel();
     void install();
-    void installPip();
-    void installRare(int exit_code, QProcess::ExitStatus e);
+    void processFinished(int exit_code, QProcess::ExitStatus e);
 
 private:
     void processRequest(QNetworkRequest request);
+    void processProcess(QString executable);
     bool isHttpRedirect(QNetworkReply *reply);
 
     QString m_applFolder;
@@ -51,12 +52,11 @@ private:
     QProcess* install_process;
     QFile* m_cmdFile;
     QList<QNetworkRequest> m_reqList;
+    QList<QString> processes;
     QNetworkReply* m_reply;
     QFile* m_downloadFile;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
-    QProcess* pip_process;
-    QProcess* get_pip_process;
 
 };
 #endif // RareUpdater_H
