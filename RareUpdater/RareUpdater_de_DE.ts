@@ -59,91 +59,86 @@
     </message>
     <message>
         <location filename="rareupdater.ui" line="42"/>
+        <source>Loading</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.ui" line="53"/>
+        <source>Update for Rare available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.ui" line="60"/>
+        <source>Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="rareupdater.ui" line="84"/>
         <source>Installation options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="49"/>
-        <source>1.8.9</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="rareupdater.ui" line="54"/>
-        <source>1.8.8</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="rareupdater.ui" line="59"/>
-        <source>1.8.7</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="rareupdater.ui" line="64"/>
-        <source>1.7.0</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="rareupdater.ui" line="72"/>
+        <location filename="rareupdater.ui" line="93"/>
         <source>Optional packages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="78"/>
+        <location filename="rareupdater.ui" line="99"/>
         <source>pypresence</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="85"/>
+        <location filename="rareupdater.ui" line="106"/>
         <source>(use Discord Rich Presence)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="92"/>
+        <location filename="rareupdater.ui" line="113"/>
         <source>PyWebview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="99"/>
+        <location filename="rareupdater.ui" line="120"/>
         <source>(Add a browser window for a simpler login process)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="109"/>
+        <location filename="rareupdater.ui" line="130"/>
         <source>Extra space required: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="142"/>
+        <location filename="rareupdater.ui" line="163"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="162"/>
+        <location filename="rareupdater.ui" line="183"/>
         <source>Rare was installed succesfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.ui" line="172"/>
+        <location filename="rareupdater.ui" line="193"/>
         <source>Launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.cpp" line="58"/>
+        <location filename="rareupdater.cpp" line="82"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.cpp" line="82"/>
+        <location filename="rareupdater.cpp" line="106"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.cpp" line="99"/>
+        <location filename="rareupdater.cpp" line="123"/>
         <source>Downloading </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="rareupdater.cpp" line="170"/>
+        <location filename="rareupdater.cpp" line="198"/>
         <source>Launching</source>
         <translation type="unfinished"></translation>
     </message>

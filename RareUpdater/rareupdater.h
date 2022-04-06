@@ -45,6 +45,7 @@ private:
     void processRequest(QNetworkRequest request);
     void processProcess(QString executable);
     bool isHttpRedirect(QNetworkReply *reply);
+    void loadingRequestFinished(QNetworkReply *reply);
 
     QString m_applFolder;
     QString m_tempFolder;
@@ -57,6 +58,7 @@ private:
     QFile* m_downloadFile;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
+    bool is_init;
 
 };
 #endif // RareUpdater_H

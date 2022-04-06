@@ -34,7 +34,49 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="page">
+     <widget class="QWidget" name="loading_page">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Loading</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="update_page">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Update for Rare available</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Update</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="settings_page">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QGroupBox" name="install_options_group">
@@ -43,28 +85,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QComboBox" name="version_combo">
-            <item>
-             <property name="text">
-              <string>1.8.9</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1.8.8</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1.8.7</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1.7.0</string>
-             </property>
-            </item>
-           </widget>
+           <widget class="QComboBox" name="version_combo"/>
           </item>
           <item>
            <widget class="QGroupBox" name="optional_group">
@@ -149,7 +170,7 @@
       <zorder>install</zorder>
       <zorder>install_options_group</zorder>
      </widget>
-     <widget class="QWidget" name="page_2">
+     <widget class="QWidget" name="success_page">
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <widget class="QLabel" name="install_sucess">

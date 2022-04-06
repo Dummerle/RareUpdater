@@ -1,9 +1,14 @@
 #include "rareupdater.h"
 #include "ui_rareupdater.h"
 #include <QMessageBox>
+#include <QJsonParseError>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
 
 RareUpdater::RareUpdater(QWidget *parent)
     : QDialog(parent), ui(new Ui::RareUpdater) {
+    is_init = true;
     ui->setupUi(this);
     m_proc = new QProcess(this);
     m_manager = new QNetworkAccessManager(this);
@@ -24,10 +29,29 @@ RareUpdater::RareUpdater(QWidget *parent)
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(downloadFinished(QNetworkReply * )));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
     // TODO add console
+    m_manager->get(QNetworkRequest(QUrl("https://pypi.org/pypi/Rare/json")));
 }
 
 RareUpdater::~RareUpdater() {
     delete ui;
+}
+
+void RareUpdater::loadingRequestFinished(QNetworkReply *reply){
+    if(reply->error() != QNetworkReply::NoError){
+        QMessageBox::warning(this, "Error", reply->errorString());
+        return;
+    }
+    QJsonParseError error;
+    QJsonDocument json(QJsonDocument::fromJson(reply->readAll().data(), &error));
+    QStringList releases;
+    releases = json.object()["releases"].toObject().keys();
+    std::reverse(releases.begin(), releases.end());
+    ui->version_combo->addItems(releases);
+    is_init = false;
+    reply->close();
+    reply->deleteLater();
+    ui->page_stack->setCurrentIndex(2);
+
 }
 
 void RareUpdater::install() {
@@ -134,6 +158,10 @@ bool RareUpdater::isHttpRedirect(QNetworkReply *reply) {
 }
 
 void RareUpdater::downloadFinished(QNetworkReply *reply) {
+    if(is_init){
+        loadingRequestFinished(reply);
+        return;
+    }
     if (reply == m_reply) {
         if (isHttpRedirect(reply))
             m_reqList.append(QNetworkRequest(reply->url()));
