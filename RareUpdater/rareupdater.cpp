@@ -5,6 +5,8 @@
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QJsonObject>
+#include "uninstalldialog.h"
+
 
 RareUpdater::RareUpdater(QWidget *parent)
     : QDialog(parent), ui(new Ui::RareUpdater) {
@@ -16,7 +18,7 @@ RareUpdater::RareUpdater(QWidget *parent)
 
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-
+    qDebug() << m_applFolder;
     m_cmdFile = new QFile(m_applFolder + "\\pythonw.exe");
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(m_cmdFile->exists());
 
@@ -24,7 +26,9 @@ RareUpdater::RareUpdater(QWidget *parent)
 
     connect(ui->install, SIGNAL(clicked()), this, SLOT(install()));
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(launch()));
+    connect(ui->installed_launch, SIGNAL(clicked()), this, SLOT(launch()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(cancel()));
+    connect(ui->uninstall_btn, SIGNAL(clicked()), this, SLOT(uninstall()));)
 
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(downloadFinished(QNetworkReply * )));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
@@ -50,12 +54,24 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply){
     is_init = false;
     reply->close();
     reply->deleteLater();
-    ui->page_stack->setCurrentIndex(2);
+
+    if (!settings.contains("installed_version")){
+        qDebug() << "Settings";
+        ui->page_stack->setCurrentIndex(pages.SETTINGS);
+    }
+
+    else if(releases[0] == settings.value("installed_version", "")){
+        ui->page_stack->setCurrentIndex(pages.INSTALLED);
+    }
+    else{
+        ui->page_stack->setCurrentIndex(pages.UPDATE);
+    }
 
 }
 
 void RareUpdater::install() {
     QString version(ui->version_combo->currentText());
+    ui->install_options_group->setDisabled(true);
     ui->install->setDisabled(true);
     QStringList urls;
     urls.append("https://bootstrap.pypa.io/get-pip.py");
@@ -111,7 +127,11 @@ void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e){
         processProcess(processes.takeFirst());
         return;
     }
-    ui->page_stack->setCurrentIndex(1);
+    settings.setValue("installed_version", ui->version_combo->currentText());
+    settings.setValue("pypresence_installed", ui->pypresence_check->isChecked());
+    settings.setValue("webview_installed", ui->webview_check->isChecked());
+
+    ui->page_stack->setCurrentIndex(pages.SUCCESS);
 }
 
 
@@ -200,6 +220,7 @@ void RareUpdater::launch(int exit_code, QProcess::ExitStatus e) {
 }
 
 void RareUpdater::launch() {
+    qDebug() << "launch";
     if (m_cmdFile->exists()){
         m_proc->setProgram(m_cmdFile->fileName());
         m_proc->setArguments(QString("-m rare").split(" "));
@@ -210,4 +231,27 @@ void RareUpdater::launch() {
 
 void RareUpdater::cancel() {
     qApp->exit();
+}
+
+void RareUpdater::uninstall(){
+    UninstallDialog dlg;
+
+    int reply = dlg.uninstall();
+    if (reply == 0){
+        qDebug() << "Cancel uninstall";
+        return;
+    }
+    QDir app_dir(m_applFolder);
+    app_dir.removeRecursively();
+    settings.remove("installed_version");
+    settings.remove("pypresence_installed");
+    settings.remove("webview_installed");
+    if (reply == 1) {
+        qDebug() << "Remove Files";
+        return;
+        QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation)).removeRecursively();
+        QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
+    }
+    QMessageBox::information(this, "Finished", tr("Rare sucessfully uninstalled"));
+    cancel();
 }

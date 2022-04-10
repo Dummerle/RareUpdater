@@ -10,7 +10,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
-
+#include <QSettings>
+#include <enums.cpp>
 #include <JlCompress.h>
 
 #include <QtDebug>
@@ -39,6 +40,7 @@ private slots:
     void launch();
     void cancel();
     void install();
+    void uninstall();
     void processFinished(int exit_code, QProcess::ExitStatus e);
 
 private:
@@ -47,6 +49,8 @@ private:
     bool isHttpRedirect(QNetworkReply *reply);
     void loadingRequestFinished(QNetworkReply *reply);
 
+    DialogPageIndexes pages;
+    QSettings settings;
     QString m_applFolder;
     QString m_tempFolder;
     QProcess* m_proc;

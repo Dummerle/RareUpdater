@@ -41,11 +41,14 @@ set(TS_FILES RareUpdater_de_DE.ts)
 
 set(PROJECT_SOURCES
         main.cpp
-        rareupdater.cpp
-        rareupdater.h
+        rareupdater.cpp rareupdater.h
         rareupdater.ui
+        uninstalldialog.h uninstalldialog.cpp
+        uninstalldialog.ui
+        enums.cpp
         ${TS_FILES}
         resources.qrc
+        uninstalldialog.h uninstalldialog.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

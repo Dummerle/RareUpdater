@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
 
     a.setOrganizationName("Rare");
-    a.setApplicationName("RareUpdater");
+    a.setApplicationName("Rare");
 
     RareUpdater w;
     w.show();
