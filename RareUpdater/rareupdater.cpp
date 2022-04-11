@@ -8,27 +8,32 @@
 #include "uninstalldialog.h"
 
 
-RareUpdater::RareUpdater(QWidget *parent)
+RareUpdater::RareUpdater(QString init, QWidget *parent)
     : QDialog(parent), ui(new Ui::RareUpdater) {
     is_init = true;
     ui->setupUi(this);
+    init_page = init;
     m_proc = new QProcess(this);
     m_manager = new QNetworkAccessManager(this);
     m_manager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
 
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    qDebug() << m_applFolder;
+
     m_cmdFile = new QFile(m_applFolder + "\\pythonw.exe");
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(m_cmdFile->exists());
 
     ui->extra_space_lbl->setText(ui->extra_space_lbl->text().replace("{}", "0MB"));
+    ui->pypresence_check->setChecked(settings.value("pypresence_installed", false).toBool());
+    ui->webview_check->setChecked(settings.value("webview_installed", false).toBool());
 
     connect(ui->install, SIGNAL(clicked()), this, SLOT(install()));
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(launch()));
     connect(ui->installed_launch, SIGNAL(clicked()), this, SLOT(launch()));
     connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(cancel()));
-    connect(ui->uninstall_btn, SIGNAL(clicked()), this, SLOT(uninstall()));)
+    connect(ui->uninstall_btn, SIGNAL(clicked()), this, SLOT(uninstall()));
+    connect(ui->update_button, SIGNAL(clicked()), this, SLOT(update_rare()));
+    connect(ui->modify_btn, SIGNAL(clicked()), this, SLOT(modify_installation()));
 
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(downloadFinished(QNetworkReply * )));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
@@ -55,7 +60,7 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply){
     reply->close();
     reply->deleteLater();
 
-    if (!settings.contains("installed_version")){
+    if (!settings.contains("installed_version") || init_page=="modify"){
         qDebug() << "Settings";
         ui->page_stack->setCurrentIndex(pages.SETTINGS);
     }
@@ -66,7 +71,19 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply){
     else{
         ui->page_stack->setCurrentIndex(pages.UPDATE);
     }
+}
 
+void RareUpdater::modify_installation(){
+    ui->page_stack->setCurrentIndex(pages.SETTINGS);
+
+}
+
+void RareUpdater::update_rare(){
+    qDebug() << "Update Rare";
+    QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install -U rare");
+    ui->version_combo->setCurrentIndex(0);
+    ui->update_button->setDisabled(true);
+    processProcess(pipInstallCmd);
 }
 
 void RareUpdater::install() {
@@ -74,11 +91,7 @@ void RareUpdater::install() {
     ui->install_options_group->setDisabled(true);
     ui->install->setDisabled(true);
     QStringList urls;
-    urls.append("https://bootstrap.pypa.io/get-pip.py");
-    urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
-    for (const auto &u: urls) {
-        m_reqList.append(QNetworkRequest(u));
-    }
+
     QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install rare==" + version);
     if(ui->pypresence_check->isChecked()){
         pipInstallCmd += " pypresence";
@@ -87,11 +100,25 @@ void RareUpdater::install() {
         pipInstallCmd += " pywebview[cef]";
     }
 
-    processes.append(m_applFolder + "\\python.exe " +  m_tempFolder + "\\get-pip.py");
-    processes.append(pipInstallCmd);
-    qDebug() << pipInstallCmd;
+    if(!settings.contains("installed_version")){
+        urls.append("https://bootstrap.pypa.io/get-pip.py");
+        urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
 
-    processRequest(m_reqList.takeFirst());
+        processes.append(m_applFolder + "\\python.exe " +  m_tempFolder + "\\get-pip.py");
+        processes.append(pipInstallCmd);
+    }
+    for (const auto &u: urls) {
+        m_reqList.append(QNetworkRequest(u));
+    }
+
+    QFile python_exe(m_applFolder + "\\python.exe");
+    if(python_exe.exists()){
+        processProcess(pipInstallCmd);
+    }
+    else{
+        qDebug() << "Downloading python";
+        processRequest(m_reqList.takeFirst());
+    }
 }
 
 void RareUpdater::processProcess(QString executable){

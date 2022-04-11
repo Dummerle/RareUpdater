@@ -37,18 +37,20 @@ if(${QT_VERSION_MAJOR} EQUAL 6)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core5Compat REQUIRED)
 endif()
 
-set(TS_FILES RareUpdater_de_DE.ts)
+set(TS_FILES
+    translations/RareUpdater_de_DE.ts
+)
 
 set(PROJECT_SOURCES
-        main.cpp
-        rareupdater.cpp rareupdater.h
-        rareupdater.ui
-        uninstalldialog.h uninstalldialog.cpp
-        uninstalldialog.ui
-        enums.cpp
-        ${TS_FILES}
-        resources.qrc
-        uninstalldialog.h uninstalldialog.cpp
+    main.cpp
+    rareupdater.cpp rareupdater.h
+    rareupdater.ui
+    uninstalldialog.h uninstalldialog.cpp
+    uninstalldialog.ui
+    enums.cpp
+    ${TS_FILES}
+    resources.qrc
+    uninstalldialog.h uninstalldialog.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -61,21 +63,21 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 
-    qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 else()
     if(ANDROID)
         add_library(RareUpdater SHARED
             ${PROJECT_SOURCES}
         )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(RareUpdater
-            ${PROJECT_SOURCES}
-        )
-    endif()
+    # Define properties for Android with Qt 5 after find_package() calls as:
+    #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+else()
+    add_executable(RareUpdater
+        ${PROJECT_SOURCES}
+    )
+endif()
 
-    qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 endif()
 
 target_link_libraries(RareUpdater PRIVATE

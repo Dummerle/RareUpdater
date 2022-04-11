@@ -32,7 +32,7 @@
    <item>
     <widget class="QStackedWidget" name="page_stack">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="loading_page">
       <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -167,14 +167,14 @@
      <widget class="QWidget" name="update_page">
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="update_available_lbl">
          <property name="text">
           <string>Update for Rare available</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="update_button">
          <property name="text">
           <string>Update</string>
          </property>

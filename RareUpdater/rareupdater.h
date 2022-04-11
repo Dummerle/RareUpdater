@@ -25,7 +25,7 @@ class RareUpdater : public QDialog
     Q_OBJECT
 
 public:
-    RareUpdater(QWidget *parent = nullptr);
+    RareUpdater(QString init_mode = "", QWidget *parent = nullptr);
     ~RareUpdater();
 
 public slots:
@@ -40,7 +40,9 @@ private slots:
     void launch();
     void cancel();
     void install();
+    void update_rare();
     void uninstall();
+    void modify_installation();
     void processFinished(int exit_code, QProcess::ExitStatus e);
 
 private:
@@ -63,6 +65,7 @@ private:
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
     bool is_init;
+    QString init_page;
 
 };
 #endif // RareUpdater_H
