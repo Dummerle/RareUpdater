@@ -12,9 +12,11 @@
 #include <QNetworkReply>
 #include <QSettings>
 #include <enums.cpp>
-#include <JlCompress.h>
-
+#include <QDir>
+#include "downloader.h"
+#include "config.cpp"
 #include <QtDebug>
+#include <QCheckBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class RareUpdater; }
@@ -25,47 +27,40 @@ class RareUpdater : public QDialog
     Q_OBJECT
 
 public:
-    RareUpdater(QString init_mode = "", QWidget *parent = nullptr);
-    ~RareUpdater();
+    explicit RareUpdater(QString init_mode = "", QWidget *parent = nullptr);
+    ~RareUpdater() override;
 
 public slots:
-    void downloadError(QNetworkReply::NetworkError err);
-    void downloadReadyRead();
-    void downloadProgress(qint64 read, qint64 total);
-    void downloadFinished(QNetworkReply* reply);
+
     void installLogs();
 
 private slots:
-    void launch(int exit_code, QProcess::ExitStatus e);
     void launch();
     void cancel();
     void install();
     void update_rare();
     void uninstall();
     void modify_installation();
+    void progress_update(int);
+    void download_finished();
     void processFinished(int exit_code, QProcess::ExitStatus e);
-
-private:
-    void processRequest(QNetworkRequest request);
-    void processProcess(QString executable);
-    bool isHttpRedirect(QNetworkReply *reply);
     void loadingRequestFinished(QNetworkReply *reply);
 
+private:
+    void processProcess(const QString& executable);
+    QMap<QString, QPointer<QCheckBox>> checkboxes;
+    Downloader downloader;
     DialogPageIndexes pages;
+    Config cfg;
     QSettings settings;
-    QString m_applFolder;
-    QString m_tempFolder;
     QProcess* m_proc;
-    QProcess* install_process;
+    QProcess* install_process{};
     QFile* m_cmdFile;
-    QList<QNetworkRequest> m_reqList;
     QList<QString> processes;
-    QNetworkReply* m_reply;
-    QFile* m_downloadFile;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
-    bool is_init;
     QString init_page;
-
+    QString m_applFolder;
+    QString m_tempFolder;
 };
 #endif // RareUpdater_H

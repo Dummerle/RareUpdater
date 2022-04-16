@@ -2,20 +2,17 @@
 #include "ui_rareupdater.h"
 #include <QMessageBox>
 #include <QJsonParseError>
-#include <QJsonDocument>
-#include <QJsonParseError>
 #include <QJsonObject>
+#include <utility>
+#include <QDialogButtonBox>
 #include "uninstalldialog.h"
 
 
 RareUpdater::RareUpdater(QString init, QWidget *parent)
-    : QDialog(parent), ui(new Ui::RareUpdater) {
-    is_init = true;
+        : QDialog(parent), ui(new Ui::RareUpdater) {
     ui->setupUi(this);
-    init_page = init;
+    init_page = std::move(init);
     m_proc = new QProcess(this);
-    m_manager = new QNetworkAccessManager(this);
-    m_manager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
 
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
@@ -24,8 +21,6 @@ RareUpdater::RareUpdater(QString init, QWidget *parent)
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(m_cmdFile->exists());
 
     ui->extra_space_lbl->setText(ui->extra_space_lbl->text().replace("{}", "0MB"));
-    ui->pypresence_check->setChecked(settings.value("pypresence_installed", false).toBool());
-    ui->webview_check->setChecked(settings.value("webview_installed", false).toBool());
 
     connect(ui->install, SIGNAL(clicked()), this, SLOT(install()));
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(launch()));
@@ -34,51 +29,67 @@ RareUpdater::RareUpdater(QString init, QWidget *parent)
     connect(ui->uninstall_btn, SIGNAL(clicked()), this, SLOT(uninstall()));
     connect(ui->update_button, SIGNAL(clicked()), this, SLOT(update_rare()));
     connect(ui->modify_btn, SIGNAL(clicked()), this, SLOT(modify_installation()));
-
-    connect(this->m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(downloadFinished(QNetworkReply * )));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
     // TODO add console
+    m_manager = new QNetworkAccessManager(this);
+    connect(m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(loadingRequestFinished(QNetworkReply * )));
     m_manager->get(QNetworkRequest(QUrl("https://pypi.org/pypi/Rare/json")));
+
+    connect(&downloader, SIGNAL(progress_update(int)), this, SLOT(progress_update(int)));
+    connect(&downloader, SIGNAL(finished()), this, SLOT(download_finished()));
+
+    for (auto &dep: cfg.opt_dependencies) {
+        auto *box = new QCheckBox(dep.getName());
+        box->setChecked(settings.value(SettingsKeys::get_name_for_dependency(dep.getName()), false).toBool());
+
+        auto *info_lbl = new QLabel(dep.getInfo());
+        ui->optional_group_layout->addRow(box, info_lbl);
+
+        checkboxes[dep.getName()] = box;
+
+    }
 }
 
 RareUpdater::~RareUpdater() {
     delete ui;
 }
 
-void RareUpdater::loadingRequestFinished(QNetworkReply *reply){
-    if(reply->error() != QNetworkReply::NoError){
+void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
+    if (reply->error() != QNetworkReply::NoError) {
         QMessageBox::warning(this, "Error", reply->errorString());
         return;
     }
-    QJsonParseError error;
+    QJsonParseError error{};
     QJsonDocument json(QJsonDocument::fromJson(reply->readAll().data(), &error));
     QStringList releases;
     releases = json.object()["releases"].toObject().keys();
     std::reverse(releases.begin(), releases.end());
     ui->version_combo->addItems(releases);
-    is_init = false;
+
     reply->close();
     reply->deleteLater();
 
-    if (!settings.contains("installed_version") || init_page=="modify"){
+    if (!settings.contains(SettingsKeys::INSTALLED_VERSION) || init_page == "modify") {
         qDebug() << "Settings";
         ui->page_stack->setCurrentIndex(pages.SETTINGS);
-    }
-
-    else if(releases[0] == settings.value("installed_version", "")){
+    } else if (releases[0] == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
         ui->page_stack->setCurrentIndex(pages.INSTALLED);
-    }
-    else{
+    } else {
         ui->page_stack->setCurrentIndex(pages.UPDATE);
     }
 }
 
-void RareUpdater::modify_installation(){
+void RareUpdater::download_finished() {
+    processProcess(processes.takeFirst());
+    
+}
+
+void RareUpdater::modify_installation() {
     ui->page_stack->setCurrentIndex(pages.SETTINGS);
 
 }
 
-void RareUpdater::update_rare(){
+void RareUpdater::update_rare() {
     qDebug() << "Update Rare";
     QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install -U rare");
     ui->version_combo->setCurrentIndex(0);
@@ -93,162 +104,75 @@ void RareUpdater::install() {
     QStringList urls;
 
     QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install rare==" + version);
-    if(ui->pypresence_check->isChecked()){
-        pipInstallCmd += " pypresence";
-    }
-    if(ui->webview_check->isChecked()){
-        pipInstallCmd += " pywebview[cef]";
+    for (auto &dep: cfg.opt_dependencies) {
+        if (checkboxes[dep.getName()]->isChecked()) {
+            pipInstallCmd += " " + dep.getName();
+        }
     }
 
-    if(!settings.contains("installed_version")){
-        urls.append("https://bootstrap.pypa.io/get-pip.py");
+    if (!settings.contains(SettingsKeys::INSTALLED_VERSION)) {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
+        urls.append("https://bootstrap.pypa.io/get-pip.py");
 
-        processes.append(m_applFolder + "\\python.exe " +  m_tempFolder + "\\get-pip.py");
+        processes.append(m_applFolder + "\\python.exe " + m_tempFolder + "\\get-pip.py");
         processes.append(pipInstallCmd);
     }
-    for (const auto &u: urls) {
-        m_reqList.append(QNetworkRequest(u));
-    }
+
 
     QFile python_exe(m_applFolder + "\\python.exe");
-    if(python_exe.exists()){
+    if (python_exe.exists()) {
         processProcess(pipInstallCmd);
-    }
-    else{
-        qDebug() << "Downloading python";
-        processRequest(m_reqList.takeFirst());
+    } else {
+        downloader.download_files(urls);
+
     }
 }
 
-void RareUpdater::processProcess(QString executable){
+void RareUpdater::processProcess(const QString &executable) {
     ui->status_label->setText(tr("Running: ") + executable);
     install_process = new QProcess(this);
     install_process->setProcessChannelMode(QProcess::MergedChannels);
     install_process->setProgram(executable.split(" ")[0]);
     QStringList proc_args;
-    for(const auto arg: executable.split(" ").mid(1)){
+    for (const auto &arg: executable.split(" ").mid(1)) {
 
         proc_args.append(arg);
     }
     install_process->setArguments(proc_args);
-    connect(install_process, SIGNAL(finished(int,QProcess::ExitStatus)),
-            this, SLOT(processFinished(int,QProcess::ExitStatus)));
+    connect(install_process, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(processFinished(int, QProcess::ExitStatus)));
     connect(install_process, SIGNAL(readyReadStandardOutput()),
             this, SLOT(installLogs()));
     install_process->start();
 }
 
-void RareUpdater::installLogs(){
+void RareUpdater::installLogs() {
     qDebug() << QString(install_process->readAllStandardOutput());
 }
 
-void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e){
-    if(e == QProcess::ExitStatus::CrashExit){
-        QMessageBox::warning(this, "Error", "Installation failed\n" + QString(install_process->readAllStandardOutput().data()));
+void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e) {
+    if (e == QProcess::ExitStatus::CrashExit) {
+        QMessageBox::warning(this, "Error",
+                             "Installation failed\n" + QString(install_process->readAllStandardOutput().data()));
         ui->status_label->setText(tr("Installation failed"));
         return;
     }
     install_process->deleteLater();
-    if(!processes.isEmpty()){
+    if (!processes.isEmpty()) {
         processProcess(processes.takeFirst());
         return;
     }
-    settings.setValue("installed_version", ui->version_combo->currentText());
-    settings.setValue("pypresence_installed", ui->pypresence_check->isChecked());
-    settings.setValue("webview_installed", ui->webview_check->isChecked());
+    settings.setValue(SettingsKeys::INSTALLED_VERSION, ui->version_combo->currentText());
+    for (auto &dep: cfg.opt_dependencies) {
+        settings.setValue(SettingsKeys::get_name_for_dependency(dep.getName()), checkboxes[dep.getName()]->isChecked());
+    }
 
     ui->page_stack->setCurrentIndex(pages.SUCCESS);
 }
 
-
-void RareUpdater::processRequest(QNetworkRequest request) {
-    m_downloadFile = new QFile(m_tempFolder + '\\' + request.url().fileName());
-    if (m_downloadFile->exists())
-        m_downloadFile->remove();
-    m_downloadFile->open(QIODevice::WriteOnly | QIODevice::NewOnly);
-    ui->status_label->setText(tr("Downloading ") + request.url().toString());
-    m_reply = m_manager->get(request);
-    connect(this->m_reply, SIGNAL(error(QNetworkReply::NetworkError)), this,
-            SLOT(downloadError(QNetworkReply::NetworkError)));
-    connect(this->m_reply, SIGNAL(readyRead()), this, SLOT(downloadReadyRead()));
-    connect(this->m_reply, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(downloadProgress(qint64, qint64)));
-
-    // connect network reply signals
-
-}
-
-void RareUpdater::downloadError(QNetworkReply::NetworkError err) {
-    qDebug() << err;
-    m_reply->deleteLater();
-    m_downloadFile->close();
-    if (m_downloadFile->exists())
-        m_downloadFile->remove();
-}
-
-void RareUpdater::downloadReadyRead() {
-    QByteArray contents = m_reply->readAll();
-    QDataStream stream(m_downloadFile);
-    stream.writeRawData(contents, contents.size());
-}
-
-void RareUpdater::downloadProgress(qint64 read, qint64 total) {
-    ui->download_progress->setMaximum(total);
-    ui->download_progress->setValue(read);
-}
-
-bool RareUpdater::isHttpRedirect(QNetworkReply *reply) {
-    qDebug() << reply->url();
-    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    return statusCode == 301 || statusCode == 302 || statusCode == 303
-            || statusCode == 305 || statusCode == 307 || statusCode == 308;
-}
-
-void RareUpdater::downloadFinished(QNetworkReply *reply) {
-    if(is_init){
-        loadingRequestFinished(reply);
-        return;
-    }
-    if (reply == m_reply) {
-        if (isHttpRedirect(reply))
-            m_reqList.append(QNetworkRequest(reply->url()));
-        m_reply->close();
-        m_reply->deleteLater();
-    }
-    m_downloadFile->close();
-
-    if (!m_reqList.isEmpty()) {
-        processRequest(m_reqList.takeFirst());
-        return;
-    }
-    QDir appFolder(m_applFolder);
-    if (appFolder.exists())
-        appFolder.removeRecursively();
-
-    JlCompress::extractDir(
-                m_tempFolder + "\\python-3.10.3-embed-amd64.zip",
-                m_applFolder
-                );
-
-    QFile pth(m_applFolder + "\\python310._pth");
-    if (pth.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        pth.write("import site");
-        pth.close();
-    }
-
-    processProcess(processes.takeFirst());
-}
-
-
-void RareUpdater::launch(int exit_code, QProcess::ExitStatus e) {
-    install_process->deleteLater();
-    ui->status_label->setText(tr("Launching"));
-    ui->page_stack->setCurrentIndex(1);
-}
-
 void RareUpdater::launch() {
     qDebug() << "launch";
-    if (m_cmdFile->exists()){
+    if (m_cmdFile->exists()) {
         m_proc->setProgram(m_cmdFile->fileName());
         m_proc->setArguments(QString("-m rare").split(" "));
     }
@@ -260,25 +184,30 @@ void RareUpdater::cancel() {
     qApp->exit();
 }
 
-void RareUpdater::uninstall(){
+void RareUpdater::uninstall() {
     UninstallDialog dlg;
 
     int reply = dlg.uninstall();
-    if (reply == 0){
+    if (reply == 0) {
         qDebug() << "Cancel uninstall";
         return;
     }
     QDir app_dir(m_applFolder);
     app_dir.removeRecursively();
-    settings.remove("installed_version");
-    settings.remove("pypresence_installed");
-    settings.remove("webview_installed");
+    settings.remove(SettingsKeys::INSTALLED_VERSION);
+    for (auto &dep: cfg.opt_dependencies) {
+        settings.remove(SettingsKeys::get_name_for_dependency(dep.getName()));
+    }
+
     if (reply == 1) {
         qDebug() << "Remove Files";
-        return;
         QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation)).removeRecursively();
         QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
     }
     QMessageBox::information(this, "Finished", tr("Rare sucessfully uninstalled"));
     cancel();
+}
+
+void RareUpdater::progress_update(int percent) {
+    ui->download_progress->setValue(percent);
 }

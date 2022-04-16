@@ -63,22 +63,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="172"/>
+        <location filename="../rareupdater.ui" line="143"/>
         <source>Update for Rare available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="179"/>
+        <location filename="../rareupdater.ui" line="150"/>
         <source>Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="154"/>
+        <location filename="../rareupdater.ui" line="125"/>
         <source>Uninstall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="161"/>
+        <location filename="../rareupdater.ui" line="132"/>
         <source>Modify installation</source>
         <translation type="unfinished"></translation>
     </message>
@@ -93,68 +93,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="68"/>
-        <source>pypresence</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.ui" line="75"/>
-        <source>(use Discord Rich Presence)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.ui" line="82"/>
-        <source>PyWebview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.ui" line="89"/>
-        <source>(Add a browser window for a simpler login process)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.ui" line="99"/>
+        <location filename="../rareupdater.ui" line="70"/>
         <source>Extra space required: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="132"/>
+        <location filename="../rareupdater.ui" line="103"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="208"/>
+        <location filename="../rareupdater.ui" line="179"/>
         <source>Rare was installed succesfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="147"/>
-        <location filename="../rareupdater.ui" line="218"/>
+        <location filename="../rareupdater.ui" line="118"/>
+        <location filename="../rareupdater.ui" line="189"/>
         <source>Launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="125"/>
+        <location filename="../rareupdater.cpp" line="132"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="149"/>
+        <location filename="../rareupdater.cpp" line="157"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="170"/>
-        <source>Downloading </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.cpp" line="245"/>
-        <source>Launching</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../rareupdater.cpp" line="282"/>
+        <location filename="../rareupdater.cpp" line="207"/>
         <source>Rare sucessfully uninstalled</source>
         <translation type="unfinished"></translation>
     </message>

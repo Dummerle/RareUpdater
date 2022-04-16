@@ -32,7 +32,7 @@
    <item>
     <widget class="QStackedWidget" name="page_stack">
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="loading_page">
       <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -61,36 +61,7 @@
             <property name="title">
              <string>Optional packages</string>
             </property>
-            <layout class="QFormLayout" name="formLayout">
-             <item row="0" column="0">
-              <widget class="QCheckBox" name="pypresence_check">
-               <property name="text">
-                <string>pypresence</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="pypresence_lbl">
-               <property name="text">
-                <string>(use Discord Rich Presence)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QCheckBox" name="webview_check">
-               <property name="text">
-                <string>PyWebview</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="webview_lbl">
-               <property name="text">
-                <string>(Add a browser window for a simpler login process)</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+            <layout class="QFormLayout" name="optional_group_layout"/>
            </widget>
           </item>
           <item>
