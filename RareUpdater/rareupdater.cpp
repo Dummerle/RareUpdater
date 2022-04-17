@@ -9,10 +9,17 @@
 #include "utils.h"
 
 
-RareUpdater::RareUpdater(QString init, QWidget *parent)
+RareUpdater::RareUpdater(QWidget *parent)
         : QDialog(parent), ui(new Ui::RareUpdater) {
     ui->setupUi(this);
-    init_page = std::move(init);
+
+    for (auto arg: qApp->arguments()) {
+        if (arg == "modify") {
+            init_page = DialogPages::SETTINGS;
+            break;
+        }
+    }
+
     m_proc = new QProcess(this);
 
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
@@ -75,7 +82,7 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
         ui->version_combo->setCurrentText(current_version);
     }
 
-    if (!settings.contains(SettingsKeys::INSTALLED_VERSION) || init_page == "modify") {
+    if (!settings.contains(SettingsKeys::INSTALLED_VERSION) || init_page == DialogPages::SETTINGS) {
         qDebug() << "Settings";
         ui->page_stack->setCurrentIndex(DialogPages::SETTINGS);
     } else if (current_version == "git"

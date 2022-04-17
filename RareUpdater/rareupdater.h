@@ -29,7 +29,7 @@ class RareUpdater : public QDialog
     Q_OBJECT
 
 public:
-    explicit RareUpdater(QString init_mode = "", QWidget *parent = nullptr);
+    explicit RareUpdater(QWidget *parent = nullptr);
     ~RareUpdater() override;
 
 public slots:
@@ -61,7 +61,7 @@ private:
     QList<QString> processes;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
-    QString init_page;
+    DialogPages init_page;
     QString m_applFolder;
     QString m_tempFolder;
 };
