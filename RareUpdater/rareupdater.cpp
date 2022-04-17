@@ -250,7 +250,7 @@ void RareUpdater::launch() {
     qDebug() << "launch";
     if (m_cmdFile->exists()) {
         m_proc->setProgram(m_cmdFile->fileName());
-        QStringList args{ "-m", "rare"};
+        QStringList args{ "-m", "rare" };
         m_proc->setArguments(args);
     }
     bool ret = m_proc->startDetached();
@@ -265,7 +265,7 @@ void RareUpdater::uninstall() {
     UninstallDialog dlg;
 
     int reply = dlg.uninstall();
-    if (reply == 0) {
+    if (reply == UninstallDialog::Reply::Cancel) {
         qDebug() << "Cancel uninstall";
         return;
     }
@@ -276,7 +276,7 @@ void RareUpdater::uninstall() {
         settings.remove(SettingsKeys::get_name_for_dependency(dep.name()));
     }
 
-    if (reply == 1) {
+    if (reply == UninstallDialog::Reply::Accept) {
         qDebug() << "Remove Files";
         QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation)).removeRecursively();
         QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();

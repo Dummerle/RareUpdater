@@ -23,17 +23,15 @@ void UninstallDialog::cancel_clicked(){
     this->close();
 }
 
-int UninstallDialog::uninstall(){
+UninstallDialog::Reply UninstallDialog::uninstall(){
     this->exec();
     if(accepted){
-        if(ui->keep_check->isChecked()){
-            return 2;
+        if(ui->keep_check->isChecked()) {
+            return UninstallDialog::Reply::AcceptKeepFiles;
+        } else {
+            return UninstallDialog::Reply::Accept;
         }
-        else{
-            return 1;
-        }
-    }
-    else{
-        return 0;
+    } else {
+        return UninstallDialog::Reply::Cancel;
     }
 }

@@ -11,10 +11,19 @@ class UninstallDialog : public QDialog
 {
     Q_OBJECT
 
+
 public:
     explicit UninstallDialog(QWidget *parent = nullptr);
     ~UninstallDialog();
-    int uninstall();
+
+    enum Reply_t {
+        Cancel = 0,
+        Accept,
+        AcceptKeepFiles
+    };
+    typedef Reply_t Reply;
+
+    Reply uninstall();
 
 private slots:
     void ok_clicked();
