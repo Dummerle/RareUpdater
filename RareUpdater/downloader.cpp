@@ -34,6 +34,7 @@ void Downloader::process_request(const QNetworkRequest &request) {
         return;
     }
     // ui->status_label->setText(tr("Downloading ") + request.url().toString());
+    emit current_download_changed(request.url().toString());
     m_reply = m_manager->get(request);
     connect(this->m_reply, SIGNAL(error(QNetworkReply::NetworkError)), this,
             SLOT(downloadError(QNetworkReply::NetworkError)));

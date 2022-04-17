@@ -45,6 +45,7 @@ private slots:
     void download_finished();
     void processFinished(int exit_code, QProcess::ExitStatus e);
     void loadingRequestFinished(QNetworkReply *reply);
+    void current_download_changed(const QString&);
 
 private:
     void processProcess(const QString& executable);

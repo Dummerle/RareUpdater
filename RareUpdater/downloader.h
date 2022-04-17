@@ -35,6 +35,7 @@ private:
 signals:
     void progress_update(int);
     void finished();
+    void current_download_changed(QString);
 
 private slots:
     void downloadError(QNetworkReply::NetworkError err);

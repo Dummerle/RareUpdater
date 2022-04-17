@@ -37,6 +37,7 @@ RareUpdater::RareUpdater(QString init, QWidget *parent)
 
     connect(&downloader, SIGNAL(progress_update(int)), this, SLOT(progress_update(int)));
     connect(&downloader, SIGNAL(finished()), this, SLOT(download_finished()));
+    connect(&downloader, SIGNAL(current_download_changed(QString)), this, SLOT(current_download_changed(const QString &)));
 
     for (auto &dep: cfg.opt_dependencies) {
         auto *box = new QCheckBox(dep.getName());
@@ -81,12 +82,14 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
 
 void RareUpdater::download_finished() {
     processProcess(processes.takeFirst());
-    
 }
 
 void RareUpdater::modify_installation() {
     ui->page_stack->setCurrentIndex(pages.SETTINGS);
+}
 
+void RareUpdater::current_download_changed(const QString& url) {
+    ui->status_label->setText("Downloading " + url);
 }
 
 void RareUpdater::update_rare() {
@@ -103,6 +106,14 @@ void RareUpdater::install() {
     ui->install->setDisabled(true);
     QStringList urls;
 
+    for (auto &dep: cfg.opt_dependencies) {
+        if ((settings.value(SettingsKeys::get_name_for_dependency(dep.getName())).toBool(), false)
+            && !checkboxes[dep.getName()]->isChecked()) {
+                processes.append(m_applFolder + "\\python.exe -m pip uninstall " + dep.getName());
+                qDebug() << "Will remove " << dep.getName();
+        }
+    }
+
     QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install rare==" + version);
     for (auto &dep: cfg.opt_dependencies) {
         if (checkboxes[dep.getName()]->isChecked()) {
@@ -118,13 +129,13 @@ void RareUpdater::install() {
         processes.append(pipInstallCmd);
     }
 
+    processes.append(m_cmdFile->fileName() + " -m rare --desktop-shortcut");
 
     QFile python_exe(m_applFolder + "\\python.exe");
     if (python_exe.exists()) {
-        processProcess(pipInstallCmd);
+        processProcess(processes.takeFirst());
     } else {
         downloader.download_files(urls);
-
     }
 }
 
