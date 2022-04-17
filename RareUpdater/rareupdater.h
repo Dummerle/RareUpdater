@@ -50,15 +50,15 @@ private slots:
     void current_download_changed(const QString&);
 
 private:
-    void processProcess(const QString& executable);
+    void processProcess(QStringList cmd);
     QMap<QString, QPointer<QCheckBox>> checkboxes;
     Downloader downloader;
     Config config;
     QSettings settings;
     QProcess* m_proc;
-    QProcess* install_process{};
+    QProcess* install_process;
     QFile* m_cmdFile;
-    QList<QString> processes;
+    QList<QStringList> processes;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
     DialogPages init_page;

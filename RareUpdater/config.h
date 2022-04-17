@@ -5,18 +5,20 @@
 #include <utility>
 
 class OptDependency{
-    QString name;
-    QString info_text;
+    QString m_name;
+    QString m_info_text;
 public:
-    OptDependency(QString p_name, QString p_info_text){
-        name = std::move(p_name);
-        info_text = std::move(p_info_text);
+    OptDependency(QString name, QString info_text){
+        m_name = name;
+        m_info_text = info_text;
     };
-    QString getName(){
-        return name;
+
+    inline const QString &name() const {
+        return m_name;
     }
-    QString getInfo(){
-        return info_text;
+
+    inline const QString &info_text() const {
+        return m_info_text;
     }
 };
 

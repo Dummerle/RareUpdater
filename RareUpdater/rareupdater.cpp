@@ -15,7 +15,8 @@ RareUpdater::RareUpdater(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    for (auto arg: qApp->arguments()) {
+    QStringList args = qApp->arguments();
+    for (auto arg: args) {
         if (arg == "modify") {
             init_page = DialogPages::SETTINGS;
             break;
@@ -48,13 +49,13 @@ RareUpdater::RareUpdater(QWidget *parent) :
             SLOT(current_download_changed(const QString &)));
 
     for (auto &dep: config.opt_dependencies) {
-        auto *box = new QCheckBox(dep.getName());
-        box->setChecked(settings.value(SettingsKeys::get_name_for_dependency(dep.getName()), false).toBool());
+        auto *box = new QCheckBox(dep.name());
+        box->setChecked(settings.value(SettingsKeys::get_name_for_dependency(dep.name()), false).toBool());
 
-        auto *info_lbl = new QLabel(dep.getInfo());
+        auto *info_lbl = new QLabel(dep.info_text());
         ui->optional_group_layout->addRow(box, info_lbl);
 
-        checkboxes[dep.getName()] = box;
+        checkboxes[dep.name()] = box;
 
     }
 }
@@ -117,10 +118,16 @@ void RareUpdater::current_download_changed(const QString &url) {
 
 void RareUpdater::update_rare() {
     qDebug() << "Update Rare";
-    QString pipInstallCmd(m_applFolder + "\\python.exe -m pip install -U rare");
+    QStringList installCmdRare;
+    installCmdRare.append(m_applFolder + "\\python.exe");
+    installCmdRare.append("-m");
+    installCmdRare.append("pip");
+    installCmdRare.append("install");
+    installCmdRare.append("-U");
+    installCmdRare.append("rare");
     ui->version_combo->setCurrentIndex(0);
     ui->update_button->setDisabled(true);
-    processProcess(pipInstallCmd);
+    processProcess(installCmdRare);
 }
 
 void RareUpdater::install() {
@@ -131,21 +138,27 @@ void RareUpdater::install() {
 
     for (auto &dep: cfg.opt_dependencies) {
         if ((settings.value(SettingsKeys::get_name_for_dependency(dep.getName())).toBool(), false)
-            && !checkboxes[dep.getName()]->isChecked()) {
-            processes.append(m_applFolder + "\\python.exe -m pip uninstall " + dep.getName());
-            qDebug() << "Will remove " << dep.getName();
+            && !checkboxes[dep.name()]->isChecked()) {
+            processes.append(QStringList{m_applFolder + "/python.exe", "-m", "pip", "uninstall", dep.name()});
+            qDebug() << "Will remove " << dep.name();
         }
     }
     QString pipInstallCmd;
     if (version == "git") {
-        pipInstallCmd =
-                m_applFolder + "python.exe -m pip install https://github.com/Dummerle/Rare/archive/refs/heads/main.zip";
+        QStringList installCmdRare{
+            m_applFolder + "/python.exe", "-m", "pip", "install", "https://github.com/Dummerle/Rare/archive/refs/heads/main.zip"
+        };
     } else {
-        pipInstallCmd = m_applFolder + "\\python.exe -m pip install rare==" + version;
+        QStringList installCmdRare;
+        installCmdRare.append(m_applFolder + "\\python.exe");
+        installCmdRare.append("-m");
+        installCmdRare.append("pip");
+        installCmdRare.append("install");
+        installCmdRare.append("rare==" + version);
     }
     for (auto &dep: config.opt_dependencies) {
-        if (checkboxes[dep.getName()]->isChecked()) {
-            pipInstallCmd += " " + dep.getName();
+        if (checkboxes[dep.name()]->isChecked()) {
+            installCmdRare.append(dep.name());
         }
     }
 
@@ -153,13 +166,20 @@ void RareUpdater::install() {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
         urls.append("https://bootstrap.pypa.io/get-pip.py");
 
-        processes.append(m_applFolder + "\\python.exe " + m_tempFolder + "\\get-pip.py");
-        processes.append(pipInstallCmd);
-        processes.append(m_applFolder +
-                         "\\python.exe -m pip install https://github.com/Dummerle/legendary/archive/refs/heads/rare.zip");
+        QStringList installCmdPip;
+        installCmdPip.append(m_applFolder + "\\python.exe");
+        installCmdPip.append(m_tempFolder + "\\get-pip.py");
+        processes.append(installCmdPip);
+
+        processes.append(installCmdRare);
+
+        processes.append(QStringList{
+            m_applFolder + "/python.exe", "-m", "pip", "install", "https://github.com/Dummerle/legendary/archive/refs/heads/rare.zip"
+        });
     }
+
     if(!QFile(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + "\\Rare.lnk").exists()){
-        processes.append(m_cmdFile->fileName() + " -m rare --desktop-shortcut");
+        processes.append(QStringList{m_cmdFile->fileName(), "-m", "rare", "--desktop-shortcut"});
     }
 
     QFile python_exe(m_applFolder + "\\python.exe");
@@ -170,17 +190,12 @@ void RareUpdater::install() {
     }
 }
 
-void RareUpdater::processProcess(const QString &executable) {
-    ui->status_label->setText(tr("Running: ") + executable);
+void RareUpdater::processProcess(QStringList cmd) {
+    ui->status_label->setText(tr("Running: ") + cmd.join(" "));
     install_process = new QProcess(this);
     install_process->setProcessChannelMode(QProcess::MergedChannels);
-    install_process->setProgram(executable.split(" ")[0]);
-    QStringList proc_args;
-    for (const auto &arg: executable.split(" ").mid(1)) {
-
-        proc_args.append(arg);
-    }
-    install_process->setArguments(proc_args);
+    install_process->setProgram(cmd.takeFirst());
+    install_process->setArguments(cmd);
     connect(install_process, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(processFinished(int, QProcess::ExitStatus)));
     connect(install_process, SIGNAL(readyReadStandardOutput()),
@@ -206,7 +221,7 @@ void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e) {
     }
     settings.setValue(SettingsKeys::INSTALLED_VERSION, ui->version_combo->currentText());
     for (auto &dep: config.opt_dependencies) {
-        settings.setValue(SettingsKeys::get_name_for_dependency(dep.getName()), checkboxes[dep.getName()]->isChecked());
+        settings.setValue(SettingsKeys::get_name_for_dependency(dep.name()), checkboxes[dep.name()]->isChecked());
     }
 
     ui->page_stack->setCurrentIndex(DialogPages::SUCCESS);
@@ -216,7 +231,10 @@ void RareUpdater::launch() {
     qDebug() << "launch";
     if (m_cmdFile->exists()) {
         m_proc->setProgram(m_cmdFile->fileName());
-        m_proc->setArguments(QString("-m rare").split(" "));
+        QStringList args;
+        args.append("-m");
+        args.append("rare");
+        m_proc->setArguments(args);
     }
     bool ret = m_proc->startDetached();
     if (ret) qApp->exit();
@@ -238,7 +256,7 @@ void RareUpdater::uninstall() {
     app_dir.removeRecursively();
     settings.remove(SettingsKeys::INSTALLED_VERSION);
     for (auto &dep: config.opt_dependencies) {
-        settings.remove(SettingsKeys::get_name_for_dependency(dep.getName()));
+        settings.remove(SettingsKeys::get_name_for_dependency(dep.name()));
     }
 
     if (reply == 1) {
