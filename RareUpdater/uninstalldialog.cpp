@@ -3,8 +3,8 @@
 
 UninstallDialog::UninstallDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::UninstallDialog){
-
+    ui(new Ui::UninstallDialog)
+{
     ui->setupUi(this);
 
     connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(ok_clicked()));

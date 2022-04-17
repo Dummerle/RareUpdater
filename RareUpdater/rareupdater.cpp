@@ -9,8 +9,10 @@
 #include "utils.h"
 
 
-RareUpdater::RareUpdater(QWidget *parent)
-        : QDialog(parent), ui(new Ui::RareUpdater) {
+RareUpdater::RareUpdater(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::RareUpdater)
+{
     ui->setupUi(this);
 
     for (auto arg: qApp->arguments()) {

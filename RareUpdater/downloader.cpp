@@ -1,7 +1,8 @@
 #include "downloader.h"
 
-Downloader::Downloader(QObject *parent)
-        : QObject{parent} {
+Downloader::Downloader(QObject *parent) :
+    QObject{parent}
+{
     m_manager = new QNetworkAccessManager(this);
     m_manager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )),
