@@ -33,7 +33,7 @@ RareUpdater::RareUpdater(QWidget *parent) :
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
 
-    m_cmdFile = new QFile(m_applFolder + "\\pythonw.exe");
+    m_cmdFile = new QFile(m_applFolder + "/pythonw.exe");
 
     ui->extra_space_lbl->setText(ui->extra_space_lbl->text().replace("{}", "0MB"));
 
@@ -123,13 +123,14 @@ void RareUpdater::current_download_changed(const QString &url) {
 
 void RareUpdater::update_rare() {
     qDebug() << "Update Rare";
-    QStringList installCmdRare;
-    installCmdRare.append(m_applFolder + "\\python.exe");
-    installCmdRare.append("-m");
-    installCmdRare.append("pip");
-    installCmdRare.append("install");
-    installCmdRare.append("-U");
-    installCmdRare.append("rare");
+    QStringList installCmdRare{
+        m_applFolder + "/python.exe",
+        "-m",
+        "pip",
+        "install",
+        "-U",
+        "rare"
+    };
     ui->version_combo->setCurrentIndex(0);
     ui->update_button->setDisabled(true);
     processProcess(installCmdRare);
@@ -141,11 +142,11 @@ void RareUpdater::install() {
     ui->install->setDisabled(true);
     QStringList urls;
 
-    for (auto &dep: cfg.opt_dependencies) {
-        if ((settings.value(SettingsKeys::get_name_for_dependency(dep.getName())).toBool(), false)
+    for (auto &dep: config.opt_dependencies) {
+        if ((settings.value(SettingsKeys::get_name_for_dependency(dep.name())).toBool(), false)
             && !checkboxes[dep.name()]->isChecked()) {
-            processes.append(QStringList{m_applFolder + "/python.exe", "-m", "pip", "uninstall", dep.name()});
-            qDebug() << "Will remove " << dep.name();
+                processes.append(QStringList{m_applFolder + "/python.exe", "-m", "pip", "uninstall", dep.name()});
+                qDebug() << "Will remove " << dep.name();
         }
     }
     QString pipInstallCmd;
@@ -154,12 +155,13 @@ void RareUpdater::install() {
             m_applFolder + "/python.exe", "-m", "pip", "install", "https://github.com/Dummerle/Rare/archive/refs/heads/main.zip"
         };
     } else {
-        QStringList installCmdRare;
-        installCmdRare.append(m_applFolder + "\\python.exe");
-        installCmdRare.append("-m");
-        installCmdRare.append("pip");
-        installCmdRare.append("install");
-        installCmdRare.append("rare==" + version);
+        QStringList installCmdRare{
+            m_applFolder + "/python.exe",
+            "-m",
+            "pip",
+            "install",
+            "rare==" + version
+        };
     }
     for (auto &dep: config.opt_dependencies) {
         if (checkboxes[dep.name()]->isChecked()) {
@@ -171,9 +173,10 @@ void RareUpdater::install() {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
         urls.append("https://bootstrap.pypa.io/get-pip.py");
 
-        QStringList installCmdPip;
-        installCmdPip.append(m_applFolder + "\\python.exe");
-        installCmdPip.append(m_tempFolder + "\\get-pip.py");
+        QStringList installCmdPip{
+            m_applFolder + "/python.exe",
+            m_tempFolder + "/get-pip.py"
+        };
         processes.append(installCmdPip);
 
         processes.append(installCmdRare);
@@ -187,7 +190,7 @@ void RareUpdater::install() {
         processes.append(QStringList{m_cmdFile->fileName(), "-m", "rare", "--desktop-shortcut"});
     }
 
-    QFile python_exe(m_applFolder + "\\python.exe");
+    QFile python_exe(m_applFolder + "/python.exe");
     if (python_exe.exists()) {
         processProcess(processes.takeFirst());
     } else {
@@ -247,9 +250,7 @@ void RareUpdater::launch() {
     qDebug() << "launch";
     if (m_cmdFile->exists()) {
         m_proc->setProgram(m_cmdFile->fileName());
-        QStringList args;
-        args.append("-m");
-        args.append("rare");
+        QStringList args{ "-m", "rare"};
         m_proc->setArguments(args);
     }
     bool ret = m_proc->startDetached();

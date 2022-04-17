@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="de_DE">
 <context>
+    <name>Console</name>
+    <message>
+        <location filename="../console.ui" line="14"/>
+        <source>RareUpdater - Debug Console</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QuaGzipFile</name>
     <message>
         <location filename="../external/quazip/quazip/quagzipfile.cpp" line="60"/>
