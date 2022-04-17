@@ -43,17 +43,16 @@ set(TS_FILES
 
 set(PROJECT_SOURCES
     main.cpp
-    rareupdater.cpp rareupdater.h
-    rareupdater.ui
-    uninstalldialog.h uninstalldialog.cpp
-    downloader.h downloader.cpp
-    uninstalldialog.ui
-    enums.cpp config.cpp
+    rareupdater.ui rareupdater.cpp rareupdater.h
+    uninstalldialog.ui uninstalldialog.cpp uninstalldialog.h
+    downloader.cpp downloader.h
+    enums.h
+    config.h
+    utils.h
     paths.cpp
     ${TS_FILES}
     resources.qrc
-    uninstalldialog.h uninstalldialog.cpp
-        config.cpp utils.h)
+)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(RareUpdater

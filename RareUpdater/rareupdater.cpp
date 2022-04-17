@@ -38,7 +38,7 @@ RareUpdater::RareUpdater(QString init, QWidget *parent)
     connect(&downloader, SIGNAL(current_download_changed(QString)), this,
             SLOT(current_download_changed(const QString &)));
 
-    for (auto &dep: cfg.opt_dependencies) {
+    for (auto &dep: config.opt_dependencies) {
         auto *box = new QCheckBox(dep.getName());
         box->setChecked(settings.value(SettingsKeys::get_name_for_dependency(dep.getName()), false).toBool());
 
@@ -77,17 +77,17 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
 
     if (!settings.contains(SettingsKeys::INSTALLED_VERSION) || init_page == "modify") {
         qDebug() << "Settings";
-        ui->page_stack->setCurrentIndex(pages.SETTINGS);
+        ui->page_stack->setCurrentIndex(DialogPages::SETTINGS);
     } else if (current_version == "git"
                || releases[1] == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
-        ui->page_stack->setCurrentIndex(pages.INSTALLED);
+        ui->page_stack->setCurrentIndex(DialogPages::INSTALLED);
         ui->installed_info->setText(current_version);
         ui->space_info->setText(
                 Utils::formatSize(Utils::dirSize(m_applFolder))
         );
 
     } else {
-        ui->page_stack->setCurrentIndex(pages.UPDATE);
+        ui->page_stack->setCurrentIndex(DialogPages::UPDATE);
         ui->update_available_lbl->setText(
                 ui->update_available_lbl->text() + " " +
                 current_version + " -> " + releases[1]);
@@ -99,7 +99,7 @@ void RareUpdater::download_finished() {
 }
 
 void RareUpdater::modify_installation() {
-    ui->page_stack->setCurrentIndex(pages.SETTINGS);
+    ui->page_stack->setCurrentIndex(DialogPages::SETTINGS);
 }
 
 void RareUpdater::current_download_changed(const QString &url) {
@@ -134,7 +134,7 @@ void RareUpdater::install() {
     } else {
         pipInstallCmd = m_applFolder + "\\python.exe -m pip install rare==" + version;
     }
-    for (auto &dep: cfg.opt_dependencies) {
+    for (auto &dep: config.opt_dependencies) {
         if (checkboxes[dep.getName()]->isChecked()) {
             pipInstallCmd += " " + dep.getName();
         }
@@ -196,11 +196,11 @@ void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e) {
         return;
     }
     settings.setValue(SettingsKeys::INSTALLED_VERSION, ui->version_combo->currentText());
-    for (auto &dep: cfg.opt_dependencies) {
+    for (auto &dep: config.opt_dependencies) {
         settings.setValue(SettingsKeys::get_name_for_dependency(dep.getName()), checkboxes[dep.getName()]->isChecked());
     }
 
-    ui->page_stack->setCurrentIndex(pages.SUCCESS);
+    ui->page_stack->setCurrentIndex(DialogPages::SUCCESS);
 }
 
 void RareUpdater::launch() {
@@ -228,7 +228,7 @@ void RareUpdater::uninstall() {
     QDir app_dir(m_applFolder);
     app_dir.removeRecursively();
     settings.remove(SettingsKeys::INSTALLED_VERSION);
-    for (auto &dep: cfg.opt_dependencies) {
+    for (auto &dep: config.opt_dependencies) {
         settings.remove(SettingsKeys::get_name_for_dependency(dep.getName()));
     }
 

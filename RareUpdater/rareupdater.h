@@ -11,12 +11,14 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QSettings>
-#include <enums.cpp>
 #include <QDir>
-#include "downloader.h"
-#include "config.cpp"
+
 #include <QtDebug>
 #include <QCheckBox>
+
+#include "enums.h"
+#include "downloader.h"
+#include "config.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class RareUpdater; }
@@ -51,8 +53,7 @@ private:
     void processProcess(const QString& executable);
     QMap<QString, QPointer<QCheckBox>> checkboxes;
     Downloader downloader;
-    DialogPageIndexes pages;
-    Config cfg;
+    Config config;
     QSettings settings;
     QProcess* m_proc;
     QProcess* install_process{};
