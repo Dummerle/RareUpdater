@@ -16,40 +16,47 @@
 
  .DESCRIPTION
 
-  This scripts downloads Qt source code, compiles and installs a static version
-  of Qt. It assumes that a prebuilt Qt / MinGW environment is already installed,
-  typically in C:\Qt. This prebuilt environment uses shared libraries. It is
-  supposed to remain the main development environment for Qt. This script adds
-  a static version of the Qt libraries in order to allow the construction of
-  standalone and self-sufficient executable.
+  This scripts compiles and installs a static version of Qt.
+  It assumes that a prebuilt Qt / MinGW environment and the Qt source are
+  already installed, typically in C:\Qt. This prebuilt environment uses shared
+  libraries. It is supposed to remain the main development environment for Qt.
+  This script adds a static version of the Qt libraries in order to allow the
+  construction of standalone and self-sufficient executable.
 
   This script is typically run from the Windows Explorer.
 
+  To allow scripts to run in powershell
+  - `set-executionpolicy remotesigned`
+
   Requirements:
   - Windows PowerShell 3.0 or higher.
-  - 7-zip.
 
- .PARAMETER QtSrcUrl
+ .PARAMETER `QtDir`
 
-  URL of the Qt source file archive.
-  By default, use the latest identified version.
+  The Directory where Qt is installed
 
- .PARAMETER QtStaticDir
+ .PARAMETER `QtBuildDir`
 
-  Root directory where the static versions of Qt are installed.
-  By default, use C:\Qt\Static.
+  The directory the scripp will build Qt. The default Z: drive
+  is a ramdisk using ImDisk for example. ImDisk is free and opensource.
+  https://sourceforge.net/projects/imdisk-toolkit/
 
- .PARAMETER QtVersion
+ .PARAMETER `QtVersion`
 
-  The Qt version. By default, this script tries to extract the version number
-  from the Qt source file name.
+  The version of Qt to build. It should be already downloaded though the
+  Qt Maintenance Tool. It also needs OpenSSL installed through the Maintenance Tool.
 
- .PARAMETER MingwDir
+ .PARAMETER `RubyPath`
 
-  Root directory of the MinGW prebuilt environment. By default, use the version
-  which was installed by the prebuilt Qt environment.
+  The top-level directory where Ruby is installed.
+  Grab it from here: https://rubyinstaller.org/downloads/
 
- .PARAMETER NoPause
+  PARAMETER `PerlPath`
+
+  The top-level directory where Straberry Perl is installed.
+  Grab it from here: https://strawberryperl.com/
+
+ .PARAMETER `NoPause`
 
   Do not wait for the user to press <enter> at end of execution. By default,
   execute a "pause" instruction at the end of execution, which is useful
@@ -58,11 +65,11 @@
 
 [CmdletBinding()]
 param(
-	$QtDir = "C:\Devel\Qt",
-	$QtBuildDir = "Z:\Qt5-Static",
-    $QtVersion = "5.15.2", #If you change this, you'll need to change the URL above to download as well...
-	$RubyPath = "C:\Devel\Ruby31-x64",
-	$PerlPath = "C:\Devel\Strawberry",
+    $QtDir = "C:\Qt",
+    $QtBuildDir = "Z:\Qt5-Static",
+    $QtVersion = "5.15.2",
+    $RubyPath = "C:\Ruby31-x64",
+    $PerlPath = "C:\Strawberry",
     [switch]$NoPause = $false
 )
 
@@ -75,13 +82,13 @@ Set-StrictMode -Version 3
 
 function Main
 {
-	Remove-Item $QtBuildDir -Recurse
+    Remove-Item $QtBuildDir -Recurse
     Create-Directory $QtBuildDir
 
-	$QtToolsDir = "$QtDir\Tools"
-	$QtMingwDir = "$QtToolsDir\mingw810_64"
-	$OpenSSLDir = "$QtToolsDir\OpenSSL\Win_x64"
-	
+    $QtToolsDir = "$QtDir\Tools"
+    $QtMingwDir = "$QtToolsDir\mingw810_64"
+    $OpenSSLDir = "$QtToolsDir\OpenSSL\Win_x64"
+
     $QtStaticDir = "$QtDir\Static" # NO TRAILING SLASH
 
     # Qt installation directory.
@@ -89,11 +96,11 @@ function Main
 
     # Build the directory tree where the static version of Qt will be installed.
     Create-Directory $QtStaticDir
-	Remove-Item $QtDstDir -Recurse
+    Remove-Item $QtDstDir -Recurse
     Create-Directory $QtDstDir
 
     # Directory of expanded packages.
-	$QtSrcDir = "$QtDir\$QtVersion\Src"
+    $QtSrcDir = "$QtDir\$QtVersion\Src"
 
     # Patch Qt's mkspecs for static build.
     $File = "$QtSrcDir\qtbase\mkspecs\win32-g++\qmake.conf"
@@ -112,26 +119,26 @@ DEFINES += QT_STATIC_BUILD
 
     # Set a clean path including MinGW.
     $env:Path = "$QtMingwDir\bin;$QtMingwDir\opt\bin;$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\system32\WindowsPowerShell\v1.0\;"
-	
-	# Add prerequisites in the path
-	$env:Path = "$OpenSSLDir\bin;$OpenSSLDir\lib;$OpenSSLDir\include;$env:Path"
-	
-	$env:Path = "$RubyPath\bin;$env:Path"
-	$env:Path = "$PerlPath\c\bin;$PerlPath\perl\site\bin;$PerlPath\perl\bin;$env:Path"
 
-	$env:Path = "$QtSrcDir\gnuwin32\bin;$env:Path"
-	$env:Path = "$QtSrcDir\qtbase\bin;$env:Path"
-	$env:Path = "$QtBuildDir\qtbase\bin;$env:Path"
+    # Add prerequisites in the path
+    $env:Path = "$OpenSSLDir\bin;$OpenSSLDir\lib;$OpenSSLDir\include;$env:Path"
 
-	Write-Output "PATH: $env:Path"
+    $env:Path = "$RubyPath\bin;$env:Path"
+    $env:Path = "$PerlPath\c\bin;$PerlPath\perl\site\bin;$PerlPath\perl\bin;$env:Path"
+
+    $env:Path = "$QtSrcDir\gnuwin32\bin;$env:Path"
+    $env:Path = "$QtSrcDir\qtbase\bin;$env:Path"
+    $env:Path = "$QtBuildDir\qtbase\bin;$env:Path"
+
+    Write-Output "PATH: $env:Path"
 
     # Check that the 'powershell' command is available
-	# ... and ruby, python and perl - as per: qt-everywhere-src-X.XX.X\README
-	#
-	# https://forum.qt.io/topic/118511/static-qt-environment-error-using-qt5-15-0/7
-	# 
-	[void] (Check-prequisites)	
-	
+    # ... and ruby, python and perl - as per: qt-everywhere-src-X.XX.X\README
+    #
+    # https://forum.qt.io/topic/118511/static-qt-environment-error-using-qt5-15-0/7
+    #
+    [void] (Check-prequisites)
+
     # Force English locale to avoid weird effects of tools localization.
     $env:LANG = "en"
 
@@ -139,88 +146,88 @@ DEFINES += QT_STATIC_BUILD
     # used by configure as prefix but this does not seem to work. So, we will
     # also specify -prefix option in configure.
     $env:QT_INSTALL_PREFIX = $QtDstDir
-	$env:OPENSSL_LIBS="-llibssl -llibcrypto -lcrypt32 -lgdi32 -lws2_32"
+    $env:OPENSSL_LIBS="-llibssl -llibcrypto -lcrypt32 -lgdi32 -lws2_32"
 
-	$QtConfig = (
-		"-no-glib",
-		"-static",
-		"-static-runtime",
-		"-release",
-		"-optimize-size",
-		"-strip",
-		"-gc-binaries",
-#		"-ccache",
-		"-platform win32-g++",
-		"-opensource",
-		"-confirm-license",
-		"-prefix $QtDstDir",
-		"-ssl",
-		"-openssl",
-		"-openssl-linked",
-		"-I $OpenSSLDir\include",
-		"-L $OpenSSLDir\lib",
-		"-qt-freetype",
-		"-qt-harfbuzz",
-		"-qt-pcre",
-		"-qt-zlib",
-		"-qt-libpng",
-		"-qt-libjpeg",
-		"-qt-sqlite",
-		"-qt-tiff",
-		"-qt-webp",
-		"-qt-doubleconversion",
-#		"-qt-assimp",
-		"-no-iconv",
-		"-no-dbus",
-		"-no-opengl",
-		"-no-zstd",
-		"-no-jasper",
-		"-no-mng",
-		"-no-icu",
-		"-no-fontconfig",
-#		"-no-gstreamer",
-#		"-no-wmf",
-		"-sql-sqlite",
-		"-no-sql-ibase",
-		"-no-sql-mysql",
-		"-no-sql-odbc",
-		"-no-sql-psql",
-		"-no-sql-sqlite2",
-		"-skip qt3d",
-		"-skip qtactiveqt",
-		"-skip qtandroidextras",
-		"-skip qtcharts",
-		"-skip qtconnectivity",
-		"-skip qtdatavis3d",
-#		"-skip qtdeclarative",
-		"-skip qtdoc",
-		"-skip qtgamepad",
-		"-skip qtlocation",
-		"-skip qtlottie",
-		"-skip qtmacextras",
-		"-skip qtmultimedia",
-		"-skip qtnetworkauth",
-		"-skip qtpurchasing",
-		"-skip qtquick3d",
-#		"-skip qtquickcontrols",
-#		"-skip qtquickcontrols2",
-		"-skip qtquicktimeline",
-		"-skip qtremoteobjects",
-		"-skip qtscript",
-		"-skip qtsensors",
-		"-skip qtspeech",
-#		"-skip qtsvg",
-		"-skip qtwayland",
-		"-skip qtwebglplugin",
-		"-skip qtwebview",
-		"-skip webengine",
-		"-make libs",
-		"-nomake tools",
-		"-nomake examples",
-		"-nomake tests"
-	) -join ' '
+    $QtConfig = (
+        "-no-glib",
+        "-static",
+        "-static-runtime",
+        "-release",
+        "-optimize-size",
+        "-strip",
+        "-gc-binaries",
+#        "-ccache",
+        "-platform win32-g++",
+        "-opensource",
+        "-confirm-license",
+        "-prefix $QtDstDir",
+        "-ssl",
+        "-openssl",
+        "-openssl-linked",
+        "-I $OpenSSLDir\include",
+        "-L $OpenSSLDir\lib",
+        "-qt-freetype",
+        "-qt-harfbuzz",
+        "-qt-pcre",
+        "-qt-zlib",
+        "-qt-libpng",
+        "-qt-libjpeg",
+        "-qt-sqlite",
+        "-qt-tiff",
+        "-qt-webp",
+        "-qt-doubleconversion",
+#        "-qt-assimp",
+        "-no-iconv",
+        "-no-dbus",
+        "-no-opengl",
+        "-no-zstd",
+        "-no-jasper",
+        "-no-mng",
+        "-no-icu",
+        "-no-fontconfig",
+#        "-no-gstreamer",
+#        "-no-wmf",
+        "-sql-sqlite",
+        "-no-sql-ibase",
+        "-no-sql-mysql",
+        "-no-sql-odbc",
+        "-no-sql-psql",
+        "-no-sql-sqlite2",
+        "-skip qt3d",
+        "-skip qtactiveqt",
+        "-skip qtandroidextras",
+        "-skip qtcharts",
+        "-skip qtconnectivity",
+        "-skip qtdatavis3d",
+#        "-skip qtdeclarative",
+        "-skip qtdoc",
+        "-skip qtgamepad",
+        "-skip qtlocation",
+        "-skip qtlottie",
+        "-skip qtmacextras",
+        "-skip qtmultimedia",
+        "-skip qtnetworkauth",
+        "-skip qtpurchasing",
+        "-skip qtquick3d",
+#        "-skip qtquickcontrols",
+#        "-skip qtquickcontrols2",
+        "-skip qtquicktimeline",
+        "-skip qtremoteobjects",
+        "-skip qtscript",
+        "-skip qtsensors",
+        "-skip qtspeech",
+#        "-skip qtsvg",
+        "-skip qtwayland",
+        "-skip qtwebglplugin",
+        "-skip qtwebview",
+        "-skip webengine",
+        "-make libs",
+        "-nomake tools",
+        "-nomake examples",
+        "-nomake tests"
+    ) -join ' '
 
-	Write-Output "CONFIG: $QtConfig"
+    Write-Output "CONFIG: $QtConfig"
 
     # Configure, compile and install Qt.
     Push-Location $QtBuildDir
@@ -270,43 +277,43 @@ function Create-Directory ([string]$Directory)
 
 function Check-prequisites
 {
-	if (Get-Command "powershell.exe" -ErrorAction SilentlyContinue) 
-	{ 
-	   echo "PowerShell is available.. This is good"
-	}
-	else
-	{
+    if (Get-Command "powershell.exe" -ErrorAction SilentlyContinue)
+    {
+       echo "PowerShell is available.. This is good"
+    }
+    else
+    {
        Exit-Script "'PowerShell' command is not available, check your windows path variable for this user account."
-	}	
+    }
 
-	if (Get-Command "ruby" -ErrorAction SilentlyContinue) 
-	{ 
-	   echo "Ruby is available.. This is good"
-	}
-	else
-	{
+    if (Get-Command "ruby" -ErrorAction SilentlyContinue)
+    {
+       echo "Ruby is available.. This is good"
+    }
+    else
+    {
        Exit-Script "'ruby' is not available, check your windows path variable for this user account or install per the Qt everything instructions!"
-	}	 	
-	
+    }
 
-	if (Get-Command "python" -ErrorAction SilentlyContinue) 
-	{ 
-	   echo "Python is available.. This is good"
-	}
-	else
-	{
+
+    if (Get-Command "python" -ErrorAction SilentlyContinue)
+    {
+       echo "Python is available.. This is good"
+    }
+    else
+    {
        Exit-Script "'python' is not available, check your windows path variable for this user account or install ActivePython per the Qt everything instructions!"
-	}	 	
+    }
 
-	if (Get-Command "perl" -ErrorAction SilentlyContinue) 
-	{ 
-	   echo "perl is available.. This is good"
-	}
-	else
-	{
+    if (Get-Command "perl" -ErrorAction SilentlyContinue)
+    {
+       echo "perl is available.. This is good"
+    }
+    else
+    {
        Exit-Script "'perl' is not available, check your windows path variable for this user account or install ActivePerl per the Qt everything instructions!"
-	}	 		
-	
+    }
+
 
 }
 
