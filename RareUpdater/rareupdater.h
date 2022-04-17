@@ -12,13 +12,20 @@
 #include <QNetworkReply>
 #include <QSettings>
 #include <QDir>
+#include <QCheckBox>
 
 #include <QtDebug>
-#include <QCheckBox>
 
 #include "enums.h"
 #include "downloader.h"
 #include "config.h"
+
+#ifdef QT_DEBUG
+#include "console.h"
+#define UPDATER_DEBUG(x) x
+#else
+#define UPDATER_DEBUG(x)
+#endif
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class RareUpdater; }
@@ -31,10 +38,6 @@ class RareUpdater : public QDialog
 public:
     explicit RareUpdater(QWidget *parent = nullptr);
     ~RareUpdater() override;
-
-public slots:
-
-    void installLogs();
 
 private slots:
     void launch();
@@ -49,6 +52,8 @@ private slots:
     void loadingRequestFinished(QNetworkReply *reply);
     void current_download_changed(const QString&);
 
+    void logStdOut();
+    void logStdErr();
 private:
     void processProcess(QStringList cmd);
     QMap<QString, QPointer<QCheckBox>> checkboxes;
@@ -64,5 +69,6 @@ private:
     DialogPages init_page;
     QString m_applFolder;
     QString m_tempFolder;
+    UPDATER_DEBUG(Console *m_console;)
 };
 #endif // RareUpdater_H

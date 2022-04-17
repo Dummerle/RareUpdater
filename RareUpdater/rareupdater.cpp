@@ -15,6 +15,11 @@ RareUpdater::RareUpdater(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    UPDATER_DEBUG(
+    m_console = new Console(this);
+    m_console->show();
+    )
+
     QStringList args = qApp->arguments();
     for (auto arg: args) {
         if (arg == "modify") {
@@ -193,19 +198,30 @@ void RareUpdater::install() {
 void RareUpdater::processProcess(QStringList cmd) {
     ui->status_label->setText(tr("Running: ") + cmd.join(" "));
     install_process = new QProcess(this);
-    install_process->setProcessChannelMode(QProcess::MergedChannels);
+    install_process->setProcessChannelMode(QProcess::SeparateChannels);
     install_process->setProgram(cmd.takeFirst());
     install_process->setArguments(cmd);
     connect(install_process, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(processFinished(int, QProcess::ExitStatus)));
     connect(install_process, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(installLogs()));
+            this, SLOT(logStdOut()));
+    connect(install_process, SIGNAL(readyReadStandardError()),
+            this, SLOT(logStdErr()));
     install_process->start();
 }
 
-void RareUpdater::installLogs() {
-    qDebug() << QString(install_process->readAllStandardOutput());
+void RareUpdater::logStdOut() {
+    UPDATER_DEBUG(
+    m_console->readyReadStdout(reinterpret_cast<QProcess*>(sender()));
+    )
 }
+
+void RareUpdater::logStdErr() {
+    UPDATER_DEBUG(
+    m_console->readyReadStderr(reinterpret_cast<QProcess*>(sender()));
+    )
+}
+
 
 void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e) {
     if (e == QProcess::ExitStatus::CrashExit) {

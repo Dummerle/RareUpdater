@@ -45,6 +45,7 @@ set(PROJECT_SOURCES
     main.cpp
     rareupdater.ui rareupdater.cpp rareupdater.h
     uninstalldialog.ui uninstalldialog.cpp uninstalldialog.h
+    console.ui console.cpp console.h
     downloader.cpp downloader.h
     enums.h
     config.h
