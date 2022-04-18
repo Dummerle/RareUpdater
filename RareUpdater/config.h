@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 #include <QList>
-#include <utility>
 
 class OptDependency{
     QString m_name;

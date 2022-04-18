@@ -7,9 +7,6 @@
 #include <QStandardPaths>
 #include <QList>
 #include <QPointer>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QSettings>
 #include <QDir>
 #include <QCheckBox>

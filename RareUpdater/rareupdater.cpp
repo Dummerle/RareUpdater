@@ -1,13 +1,12 @@
 #include "rareupdater.h"
 #include "ui_rareupdater.h"
+
 #include <QMessageBox>
 #include <QJsonParseError>
 #include <QJsonObject>
-#include <utility>
-#include <QDialogButtonBox>
+
 #include "uninstalldialog.h"
 #include "utils.h"
-
 
 RareUpdater::RareUpdater(QWidget *parent) :
     QDialog(parent),
@@ -163,6 +162,7 @@ void RareUpdater::install() {
             "rare==" + version
         };
     }
+    qDebug() << installCmdRare;
     for (auto &dep: config.opt_dependencies) {
         if (checkboxes[dep.name()]->isChecked()) {
             installCmdRare.append(dep.name());
@@ -173,12 +173,7 @@ void RareUpdater::install() {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
         urls.append("https://bootstrap.pypa.io/get-pip.py");
 
-        QStringList installCmdPip{
-            m_applFolder + "/python.exe",
-            m_tempFolder + "/get-pip.py"
-        };
-        processes.append(installCmdPip);
-
+        processes.append(QStringList{m_applFolder + "/python.exe", m_tempFolder + "/get-pip.py"});
         processes.append(installCmdRare);
 
         processes.append(QStringList{
