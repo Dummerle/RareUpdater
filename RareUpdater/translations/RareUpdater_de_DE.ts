@@ -63,12 +63,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="143"/>
+        <location filename="../rareupdater.ui" line="146"/>
+        <source>Installed version:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../rareupdater.ui" line="165"/>
+        <source>Space required: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../rareupdater.ui" line="185"/>
         <source>Update for Rare available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="150"/>
+        <location filename="../rareupdater.ui" line="192"/>
         <source>Update</source>
         <translation type="unfinished"></translation>
     </message>
@@ -103,29 +113,29 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="179"/>
+        <location filename="../rareupdater.ui" line="221"/>
         <source>Rare was installed succesfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../rareupdater.ui" line="118"/>
-        <location filename="../rareupdater.ui" line="189"/>
+        <location filename="../rareupdater.ui" line="231"/>
         <source>Launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="143"/>
+        <location filename="../rareupdater.cpp" line="164"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="168"/>
+        <location filename="../rareupdater.cpp" line="189"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="218"/>
-        <source>Rare sucessfully uninstalled</source>
+        <location filename="../rareupdater.cpp" line="239"/>
+        <source>Rare successfully uninstalled</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
