@@ -29,12 +29,8 @@ int main(int argc, char *argv[])
 
     a.setOrganizationName("Rare");
     a.setApplicationName("Rare");
-    bool is_modify = QString(*argv).contains("modify");
-    QString app_arg;
-    if(is_modify)
-        app_arg = "modify";
 
-    RareUpdater w(app_arg);
+    RareUpdater w;
     w.show();
     return a.exec();
 }

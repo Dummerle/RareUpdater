@@ -1,7 +1,8 @@
 #include "downloader.h"
 
-Downloader::Downloader(QObject *parent)
-        : QObject{parent} {
+Downloader::Downloader(QObject *parent) :
+    QObject{parent}
+{
     m_manager = new QNetworkAccessManager(this);
     m_manager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
     connect(this->m_manager, SIGNAL(finished(QNetworkReply * )),
@@ -24,7 +25,7 @@ void Downloader::download_files(const QStringList& urls) {
 
 void Downloader::process_request(const QNetworkRequest &request) {
     qDebug() << m_tempFolder;
-    m_downloadFile = new QFile(m_tempFolder + '\\' + request.url().fileName());
+    m_downloadFile = new QFile(m_tempFolder + '/' + request.url().fileName());
     if (m_downloadFile->exists())
         qDebug() << "Remove " << m_downloadFile->fileName();
         m_downloadFile->remove();
@@ -93,10 +94,10 @@ void Downloader::downloadFinished(QNetworkReply *reply) {
         appFolder.removeRecursively();
     qDebug() << m_applFolder;
     JlCompress::extractDir(
-            m_tempFolder + "\\python-3.10.3-embed-amd64.zip",
+            m_tempFolder + "/python-3.10.3-embed-amd64.zip",
             m_applFolder
     );
-    QFile pth(m_applFolder + "\\python310._pth");
+    QFile pth(m_applFolder + "/python310._pth");
     if (pth.open(QIODevice::WriteOnly | QIODevice::Append)) {
         pth.write("import site");
         pth.close();

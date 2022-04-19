@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="de_DE">
 <context>
+    <name>Console</name>
+    <message>
+        <location filename="../console.ui" line="14"/>
+        <source>RareUpdater - Debug Console</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QuaGzipFile</name>
     <message>
         <location filename="../external/quazip/quazip/quagzipfile.cpp" line="60"/>
@@ -58,83 +66,83 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="42"/>
+        <location filename="../rareupdater.ui" line="59"/>
         <source>Loading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="146"/>
+        <location filename="../rareupdater.ui" line="187"/>
         <source>Installed version:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="165"/>
+        <location filename="../rareupdater.ui" line="206"/>
         <source>Space required: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="185"/>
+        <location filename="../rareupdater.ui" line="243"/>
         <source>Update for Rare available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="192"/>
+        <location filename="../rareupdater.ui" line="250"/>
         <source>Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="125"/>
+        <location filename="../rareupdater.ui" line="166"/>
         <source>Uninstall</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="132"/>
+        <location filename="../rareupdater.ui" line="173"/>
         <source>Modify installation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="53"/>
+        <location filename="../rareupdater.ui" line="82"/>
         <source>Installation options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="62"/>
+        <location filename="../rareupdater.ui" line="91"/>
         <source>Optional packages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="70"/>
+        <location filename="../rareupdater.ui" line="99"/>
         <source>Extra space required: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="103"/>
+        <location filename="../rareupdater.ui" line="132"/>
         <source>Install</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="221"/>
+        <location filename="../rareupdater.ui" line="291"/>
         <source>Rare was installed succesfully</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.ui" line="118"/>
-        <location filename="../rareupdater.ui" line="231"/>
+        <location filename="../rareupdater.ui" line="159"/>
+        <location filename="../rareupdater.ui" line="301"/>
         <source>Launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="164"/>
+        <location filename="../rareupdater.cpp" line="198"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="189"/>
+        <location filename="../rareupdater.cpp" line="229"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="239"/>
+        <location filename="../rareupdater.cpp" line="280"/>
         <source>Rare successfully uninstalled</source>
         <translation type="unfinished"></translation>
     </message>

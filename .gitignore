@@ -37,6 +37,7 @@ Thumbs.db
 
 # qtcreator generated files
 *.pro.user*
+*.txt.user*
 
 # xemacs temporary files
 *.flc
@@ -73,10 +74,6 @@ Thumbs.db
 *.dll
 *.exe
 
-/build-RareLauncher-Desktop_Qt_5_15_2_MinGW_64_bit-Debug/
-/build-RareLauncher-Desktop_Qt_6_2_4_MinGW_64_bit-Debug/
-build-RareUpdater-Desktop_Qt_5_15_2_MinGW_64_bit-MinSizeRel/
-build-RareUpdater-Desktop_Qt_5_15_2_MinGW_64_bit-Release/
-/RareUpdater/CMakeLists.txt.user
-/build-RareUpdater-Desktop_Qt_5_15_2_MinGW_64_bit-Debug/
-/RareUpdater/cmake-build-debug/
+# Build directories
+# -----------------
+*build-*

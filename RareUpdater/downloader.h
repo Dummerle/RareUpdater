@@ -23,8 +23,8 @@ public:
 private:
     void process_request(const QNetworkRequest &request);
 
-    QNetworkReply *m_reply{};
-    QFile *m_downloadFile{};
+    QNetworkReply *m_reply;
+    QFile *m_downloadFile;
     QPointer<QNetworkAccessManager> m_manager;
     QList<QNetworkRequest> m_reqList;
     QString m_applFolder;

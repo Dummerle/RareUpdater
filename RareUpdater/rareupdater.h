@@ -7,16 +7,22 @@
 #include <QStandardPaths>
 #include <QList>
 #include <QPointer>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QSettings>
-#include <enums.cpp>
 #include <QDir>
-#include "downloader.h"
-#include "config.cpp"
-#include <QtDebug>
 #include <QCheckBox>
+
+#include <QtDebug>
+
+#include "enums.h"
+#include "downloader.h"
+#include "config.h"
+
+#ifdef QT_DEBUG
+#include "console.h"
+#define UPDATER_DEBUG(x) x
+#else
+#define UPDATER_DEBUG(x)
+#endif
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class RareUpdater; }
@@ -27,12 +33,8 @@ class RareUpdater : public QDialog
     Q_OBJECT
 
 public:
-    explicit RareUpdater(QString init_mode = "", QWidget *parent = nullptr);
+    explicit RareUpdater(QWidget *parent = nullptr);
     ~RareUpdater() override;
-
-public slots:
-
-    void installLogs();
 
 private slots:
     void launch();
@@ -47,21 +49,23 @@ private slots:
     void loadingRequestFinished(QNetworkReply *reply);
     void current_download_changed(const QString&);
 
+    void logStdOut();
+    void logStdErr();
 private:
-    void processProcess(const QString& executable);
+    void processProcess(QStringList cmd);
     QMap<QString, QPointer<QCheckBox>> checkboxes;
     Downloader downloader;
-    DialogPageIndexes pages;
-    Config cfg;
+    Config config;
     QSettings settings;
     QProcess* m_proc;
-    QProcess* install_process{};
+    QProcess* install_process;
     QFile* m_cmdFile;
-    QList<QString> processes;
+    QList<QStringList> processes;
     QPointer<QNetworkAccessManager> m_manager;
     Ui::RareUpdater *ui;
-    QString init_page;
+    DialogPages init_page;
     QString m_applFolder;
     QString m_tempFolder;
+    UPDATER_DEBUG(Console *m_console;)
 };
 #endif // RareUpdater_H
