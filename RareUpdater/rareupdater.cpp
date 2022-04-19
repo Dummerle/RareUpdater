@@ -123,11 +123,7 @@ void RareUpdater::current_download_changed(const QString &url) {
 void RareUpdater::update_rare() {
     qDebug() << "Update Rare";
     QStringList installCmdRare{
-        m_applFolder + "/python.exe",
-        "-m",
-        "pip",
-        "install",
-        "-U",
+        m_applFolder + "/python.exe", "-m", "pip", "install", "-U",
         "rare"
     };
     ui->version_combo->setCurrentIndex(0);
@@ -148,26 +144,26 @@ void RareUpdater::install() {
                 qDebug() << "Will remove " << dep.name();
         }
     }
-    QString pipInstallCmd;
+
+    QStringList installCmdRare;
     if (version == "git") {
-        QStringList installCmdRare{
-            m_applFolder + "/python.exe", "-m", "pip", "install", "https://github.com/Dummerle/Rare/archive/refs/heads/main.zip"
+        installCmdRare = QStringList{
+            m_applFolder + "/python.exe", "-m", "pip", "install",
+            "https://github.com/Dummerle/Rare/archive/refs/heads/main.zip"
         };
     } else {
-        QStringList installCmdRare{
-            m_applFolder + "/python.exe",
-            "-m",
-            "pip",
-            "install",
+        installCmdRare = QStringList{
+            m_applFolder + "/python.exe", "-m", "pip", "install",
             "rare==" + version
         };
     }
-    qDebug() << installCmdRare;
+
     for (auto &dep: config.opt_dependencies) {
         if (checkboxes[dep.name()]->isChecked()) {
             installCmdRare.append(dep.name());
         }
     }
+    qDebug() << installCmdRare;
 
     if (!settings.contains(SettingsKeys::INSTALLED_VERSION)) {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
@@ -177,7 +173,8 @@ void RareUpdater::install() {
         processes.append(installCmdRare);
 
         processes.append(QStringList{
-            m_applFolder + "/python.exe", "-m", "pip", "install", "https://github.com/Dummerle/legendary/archive/refs/heads/rare.zip"
+            m_applFolder + "/python.exe", "-m", "pip", "install",
+            "https://github.com/Dummerle/legendary/archive/refs/heads/rare.zip"
         });
     }
 
