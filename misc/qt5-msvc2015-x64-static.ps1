@@ -68,6 +68,7 @@ param(
     $QtDir = "C:\Qt",
     $QtBuildDir = "Z:\Qt5-Static",
     $QtVersion = "5.15.2",
+    $PythonPath = "C:\Python27",
     $RubyPath = "C:\Ruby31-x64",
     $PerlPath = "C:\Strawberry",
     [switch]$NoPause = $false
@@ -92,7 +93,7 @@ function Main
     $QtStaticDir = "$QtDir\Static" # NO TRAILING SLASH
 
     # Qt installation directory.
-    $QtDstDir = "$QtStaticDir\$QtVersion-msvc2015"
+    $QtDstDir = "$QtStaticDir\$QtVersion-msvc2015-x64"
 
     # Build the directory tree where the static version of Qt will be installed.
     Create-Directory $QtStaticDir
@@ -117,6 +118,7 @@ function Main
     # Add prerequisites in the path
     $env:Path = "$OpenSSLDir\bin;$OpenSSLDir\lib;$OpenSSLDir\include;$env:Path"
 
+    $env:Path = "$PythonPath;$env:Path"
     $env:Path = "$RubyPath\bin;$env:Path"
     $env:Path = "$PerlPath\c\bin;$PerlPath\perl\site\bin;$PerlPath\perl\bin;$env:Path"
 
@@ -225,15 +227,9 @@ function Main
     # Configure, compile and install Qt.
     Push-Location $QtBuildDir
     cmd /c "$QtSrcDir\configure.bat $QtConfig"
-    nmake -j4
+    nmake
     nmake install
     Pop-Location
-
-    # Patch Qt's installed mkspecs for static build of application.
-    $File = "$QtDstDir\mkspecs\win32-g++\qmake.conf"
-    @"
-CONFIG += static
-"@ | Out-File -Append $File -Encoding Ascii
 
     Exit-Script
 }

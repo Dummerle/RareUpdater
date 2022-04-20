@@ -92,7 +92,7 @@ function Main
     $QtStaticDir = "$QtDir\Static" # NO TRAILING SLASH
 
     # Qt installation directory.
-    $QtDstDir = "$QtStaticDir\$QtVersion-mingw64"
+    $QtDstDir = "$QtStaticDir\$QtVersion-mingw64-x64"
 
     # Build the directory tree where the static version of Qt will be installed.
     Create-Directory $QtStaticDir
