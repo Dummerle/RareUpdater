@@ -92,7 +92,7 @@ function Main
     $QtStaticDir = "$QtDir\Static" # NO TRAILING SLASH
 
     # Qt installation directory.
-    $QtDstDir = "$QtStaticDir\$QtVersion"
+    $QtDstDir = "$QtStaticDir\$QtVersion-mingw64"
 
     # Build the directory tree where the static version of Qt will be installed.
     Create-Directory $QtStaticDir
@@ -118,7 +118,8 @@ DEFINES += QT_STATIC_BUILD
     }
 
     # Set a clean path including MinGW.
-    $env:Path = "$QtMingwDir\bin;$QtMingwDir\opt\bin;$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\system32\WindowsPowerShell\v1.0\;"
+    $env:Path = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\system32\WindowsPowerShell\v1.0\;"
+    $env:Path = "$QtMingwDir\bin;$QtMingwDir\opt\bin;$env:Path"
 
     # Add prerequisites in the path
     $env:Path = "$OpenSSLDir\bin;$OpenSSLDir\lib;$OpenSSLDir\include;$env:Path"
@@ -199,7 +200,7 @@ DEFINES += QT_STATIC_BUILD
         "-skip qtcharts",
         "-skip qtconnectivity",
         "-skip qtdatavis3d",
-#        "-skip qtdeclarative",
+        "-skip qtdeclarative",
         "-skip qtdoc",
         "-skip qtgamepad",
         "-skip qtlocation",
@@ -209,8 +210,8 @@ DEFINES += QT_STATIC_BUILD
         "-skip qtnetworkauth",
         "-skip qtpurchasing",
         "-skip qtquick3d",
-#        "-skip qtquickcontrols",
-#        "-skip qtquickcontrols2",
+        "-skip qtquickcontrols",
+        "-skip qtquickcontrols2",
         "-skip qtquicktimeline",
         "-skip qtremoteobjects",
         "-skip qtscript",
