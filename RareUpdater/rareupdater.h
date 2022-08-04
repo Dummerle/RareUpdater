@@ -51,10 +51,10 @@ private slots:
 
     void logStdOut();
     void logStdErr();
+
 private:
-    void processProcess(QStringList cmd);
+    Downloader* m_downloader;
     QMap<QString, QPointer<QCheckBox>> checkboxes;
-    Downloader downloader;
     Config config;
     QSettings settings;
     QProcess* m_proc;
@@ -67,5 +67,7 @@ private:
     QString m_applFolder;
     QString m_tempFolder;
     UPDATER_DEBUG(Console *m_console;)
+
+    void processProcess(QStringList cmd);
 };
 #endif // RareUpdater_H

@@ -27,10 +27,11 @@ RareUpdater::RareUpdater(QWidget *parent) :
         }
     }
 
-    m_proc = new QProcess(this);
-
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+
+    m_downloader = new Downloader(m_applFolder, m_tempFolder, this);
+    m_proc = new QProcess(this);
 
     m_cmdFile = new QFile(m_applFolder + "/pythonw.exe");
 
@@ -47,10 +48,9 @@ RareUpdater::RareUpdater(QWidget *parent) :
     connect(m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(loadingRequestFinished(QNetworkReply * )));
     m_manager->get(QNetworkRequest(QUrl("https://pypi.org/pypi/Rare/json")));
 
-    connect(&downloader, SIGNAL(progress_update(int)), this, SLOT(progress_update(int)));
-    connect(&downloader, SIGNAL(finished()), this, SLOT(download_finished()));
-    connect(&downloader, SIGNAL(current_download_changed(QString)), this,
-            SLOT(current_download_changed(const QString &)));
+    connect(m_downloader, &Downloader::progress, this, &RareUpdater::progress_update);
+    connect(m_downloader, &Downloader::finished, this, &RareUpdater::download_finished);
+    connect(m_downloader, &Downloader::current, this, &RareUpdater::current_download_changed);
 
     for (auto &dep: config.opt_dependencies) {
         auto *box = new QCheckBox(dep.name());
@@ -109,6 +109,21 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
 }
 
 void RareUpdater::download_finished() {
+
+//    QDir appFolder(m_data_folder);
+//    if (appFolder.exists())
+//        appFolder.removeRecursively();
+//    qDebug() << m_data_folder;
+//    JlCompress::extractDir(
+//            m_temp_folder + "/python-3.10.3-embed-amd64.zip",
+//            m_data_folder
+//    );
+//    QFile pth(m_data_folder + "/python310._pth");
+//    if (pth.open(QIODevice::WriteOnly | QIODevice::Append)) {
+//        pth.write("import site");
+//        pth.close();
+//    }
+
     processProcess(processes.takeFirst());
 }
 
@@ -186,7 +201,7 @@ void RareUpdater::install() {
     if (python_exe.exists()) {
         processProcess(processes.takeFirst());
     } else {
-        downloader.download_files(urls);
+        m_downloader->downloadFiles(urls);
     }
 }
 

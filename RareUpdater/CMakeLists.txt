@@ -11,8 +11,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static -static-libgcc -static-libstdc++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
+if(${BUILD_STATIC_BINARY})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static -static-libgcc -static-libstdc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libgcc -static-libstdc++")
+endif()
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS
     Widgets
@@ -27,9 +29,11 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
     REQUIRED
 )
 
-if(${QT_VERSION_MAJOR} EQUAL 5)
-    find_package(QT NAMES Qt5 COMPONENTS Zlib REQUIRED)
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Zlib REQUIRED)
+if(WIN32)
+    if(${QT_VERSION_MAJOR} EQUAL 5)
+        find_package(QT NAMES Qt5 COMPONENTS Zlib REQUIRED)
+        find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Zlib REQUIRED)
+    endif()
 endif()
 
 if(${QT_VERSION_MAJOR} EQUAL 6)
@@ -87,8 +91,10 @@ target_link_libraries(RareUpdater PRIVATE
     Qt${QT_VERSION_MAJOR}::Network
 )
 
-if(${QT_VERSION_MAJOR} EQUAL 5)
-    target_link_libraries(RareUpdater PRIVATE Qt${QT_VERSION_MAJOR}::Zlib)
+if (WIN32)
+    if(${QT_VERSION_MAJOR} EQUAL 5)
+        target_link_libraries(RareUpdater PRIVATE Qt${QT_VERSION_MAJOR}::Zlib)
+    endif()
 endif()
 if(${QT_VERSION_MAJOR} EQUAL 6)
     target_link_libraries(RareUpdater PRIVATE Qt${QT_VERSION_MAJOR}::Core5Compat)
@@ -96,19 +102,27 @@ endif()
 
 # OpenSSL stuff
 #set(OPENSSL_ROOT_DIR "C:\\Devel\\Qt\\Tools\\OpenSSL\\Win_x64\\lib")
-set(OPENSSL_USE_STATIC_LIBS ON)
-
-find_package(OpenSSL)
+if(WIN32)
+    set(OPENSSL_USE_STATIC_LIBS ON)
+endif()
+find_package(OpenSSL REQUIRED)
 target_link_libraries(RareUpdater PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
 # QuaZip stuff
-if(${QT_VERSION_MAJOR} EQUAL 5)
-    set(QUAZIP_USE_QT_ZLIB ON)
+if (WIN32)
+    if(${QT_VERSION_MAJOR} EQUAL 5)
+        set(QUAZIP_USE_QT_ZLIB ON)
+        add_subdirectory(external/quazip)
+        target_link_libraries(RareUpdater PRIVATE QuaZip::QuaZip)
+        set(BUILD_SHARED_LIBS OFF)
+    endif()
+else()
+    if(${QT_VERSION_MAJOR} EQUAL 5)
+        set(QUAZIP_USE_QT_ZLIB OFF)
+        find_package(QuaZip-Qt5 REQUIRED)
+        target_link_libraries(RareUpdater PRIVATE QuaZip::QuaZip)
+    endif()
 endif()
-set(BUILD_SHARED_LIBS OFF)
-
-add_subdirectory(external/quazip)
-target_link_libraries(RareUpdater PRIVATE QuaZip::QuaZip)
 
 set_target_properties(RareUpdater PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

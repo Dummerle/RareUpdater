@@ -16,26 +16,25 @@
 class Downloader : public QObject {
 Q_OBJECT
 public:
-    explicit Downloader(QObject *parent = nullptr);
+    explicit Downloader(const QString&, const QString&, QObject *parent = nullptr);
 
-    void download_files(const QStringList& urls);
-
-private:
-    void process_request(const QNetworkRequest &request);
-
-    QNetworkReply *m_reply;
-    QFile *m_downloadFile;
-    QPointer<QNetworkAccessManager> m_manager;
-    QList<QNetworkRequest> m_reqList;
-    QString m_applFolder;
-    QString m_tempFolder;
-
-    bool isHttpRedirect(QNetworkReply *reply);
+    void downloadFiles(const QStringList& urls);
 
 signals:
-    void progress_update(int);
+    void progress(int);
     void finished();
-    void current_download_changed(QString);
+    void current(QString);
+
+private:
+    QPointer<QNetworkAccessManager> m_manager;
+    QList<QNetworkRequest> m_requests;
+    QNetworkReply *m_reply;
+    QFile *m_download_file;
+    QString m_data_folder;
+    QString m_temp_folder;
+
+    void processRequest(const QNetworkRequest &request);
+    bool isHttpRedirect(QNetworkReply *reply);
 
 private slots:
     void downloadError(QNetworkReply::NetworkError err);
