@@ -5,3 +5,6 @@
 [submodule "RareUpdater/external/quazip"]
 	path = RareUpdater/external/quazip
 	url = https://github.com/stachenov/quazip
+[submodule "RareUpdater/external/html-qt"]
+	path = RareUpdater/external/html-qt
+	url = https://github.com/cutelyst/html-qt
