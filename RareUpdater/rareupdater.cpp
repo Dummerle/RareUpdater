@@ -1,4 +1,4 @@
-#include "rareupdater.h"
+#include "rareupdater.hpp"
 #include "ui_rareupdater.h"
 
 #include <QMessageBox>
@@ -27,17 +27,17 @@ RareUpdater::RareUpdater(QWidget *parent) :
         }
     }
 
-    m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    m_data_folder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    m_temp_folder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
 
-    m_downloader = new Downloader(m_tempFolder, this);
+    m_downloader = new Downloader(m_temp_folder, this);
     connect(m_downloader, &Downloader::progress, this, &RareUpdater::progress_update);
     connect(m_downloader, &Downloader::finished, this, &RareUpdater::download_finished);
     connect(m_downloader, &Downloader::current, this, &RareUpdater::current_download_changed);
 
     m_proc = new QProcess(this);
 
-    m_cmdFile = new QFile(m_applFolder + "/pythonw.exe");
+    m_cmd_file = new QFile(m_data_folder + "/pythonw.exe");
 
     ui->extra_space_lbl->setText(ui->extra_space_lbl->text().replace("{}", "0MB"));
 
@@ -74,7 +74,7 @@ RareUpdater::~RareUpdater() {
     )
     delete m_downloader;
     delete m_proc;
-    delete m_cmdFile;
+    delete m_cmd_file;
     delete ui;
 }
 
@@ -97,7 +97,7 @@ void RareUpdater::updateRareVersions() {
         ui->page_stack->setCurrentIndex(DialogPages::INSTALLED);
         ui->installed_info->setText(current_version);
         ui->space_info->setText(
-                Utils::formatSize(Utils::dirSize(m_applFolder))
+                Utils::formatSize(Utils::dirSize(m_data_folder))
         );
 
     } else {
@@ -143,7 +143,7 @@ void RareUpdater::current_download_changed(const QString &url) {
 void RareUpdater::update_rare() {
     qDebug() << "Update Rare";
     QStringList installCmdRare{
-        m_applFolder + "/python.exe", "-m", "pip", "install", "-U",
+        m_data_folder + "/python.exe", "-m", "pip", "install", "-U",
         "rare"
     };
     ui->version_combo->setCurrentIndex(0);
@@ -160,7 +160,7 @@ void RareUpdater::install() {
     for (auto &dep: config.opt_dependencies) {
         if ((settings.value(SettingsKeys::get_name_for_dependency(dep.name())).toBool(), false)
             && !checkboxes[dep.name()]->isChecked()) {
-                processes.append(QStringList{m_applFolder + "/python.exe", "-m", "pip", "uninstall", dep.name()});
+                processes.append(QStringList{m_data_folder + "/python.exe", "-m", "pip", "uninstall", dep.name()});
                 qDebug() << "Will remove " << dep.name();
         }
     }
@@ -168,12 +168,12 @@ void RareUpdater::install() {
     QStringList installCmdRare;
     if (version == "git") {
         installCmdRare = QStringList{
-            m_applFolder + "/python.exe", "-m", "pip", "install",
+            m_data_folder + "/python.exe", "-m", "pip", "install",
             "https://github.com/Dummerle/Rare/archive/refs/heads/main.zip"
         };
     } else {
         installCmdRare = QStringList{
-            m_applFolder + "/python.exe", "-m", "pip", "install",
+            m_data_folder + "/python.exe", "-m", "pip", "install",
             "rare==" + version
         };
     }
@@ -189,20 +189,20 @@ void RareUpdater::install() {
         urls.append("https://www.python.org/ftp/python/3.10.3/python-3.10.3-embed-amd64.zip");
         urls.append("https://bootstrap.pypa.io/get-pip.py");
 
-        processes.append(QStringList{m_applFolder + "/python.exe", m_tempFolder + "/get-pip.py"});
+        processes.append(QStringList{m_data_folder + "/python.exe", m_temp_folder + "/get-pip.py"});
         processes.append(installCmdRare);
 
         processes.append(QStringList{
-            m_applFolder + "/python.exe", "-m", "pip", "install",
+            m_data_folder + "/python.exe", "-m", "pip", "install",
             "https://github.com/Dummerle/legendary/archive/refs/heads/rare.zip"
         });
     }
 
     if(!QFile(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + "\\Rare.lnk").exists()){
-        processes.append(QStringList{m_cmdFile->fileName(), "-m", "rare", "--desktop-shortcut"});
+        processes.append(QStringList{m_cmd_file->fileName(), "-m", "rare", "--desktop-shortcut"});
     }
 
-    QFile python_exe(m_applFolder + "/python.exe");
+    QFile python_exe(m_data_folder + "/python.exe");
     if (python_exe.exists()) {
         processProcess(processes.takeFirst());
     } else {
@@ -260,8 +260,8 @@ void RareUpdater::processFinished(int exit_code, QProcess::ExitStatus e) {
 
 void RareUpdater::launch() {
     qDebug() << "launch";
-    if (m_cmdFile->exists()) {
-        m_proc->setProgram(m_cmdFile->fileName());
+    if (m_cmd_file->exists()) {
+        m_proc->setProgram(m_cmd_file->fileName());
         QStringList args{ "-m", "rare" };
         m_proc->setArguments(args);
     }
@@ -281,7 +281,7 @@ void RareUpdater::uninstall() {
         qDebug() << "Cancel uninstall";
         return;
     }
-    QDir app_dir(m_applFolder);
+    QDir app_dir(m_data_folder);
     app_dir.removeRecursively();
     settings.remove(SettingsKeys::INSTALLED_VERSION);
     for (auto &dep: config.opt_dependencies) {

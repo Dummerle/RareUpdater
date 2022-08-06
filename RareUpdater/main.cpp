@@ -1,9 +1,9 @@
-#include "rareupdater.h"
-
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
 #include <QStyleFactory>
+
+#include "rareupdater.hpp"
 
 int main(int argc, char *argv[])
 {

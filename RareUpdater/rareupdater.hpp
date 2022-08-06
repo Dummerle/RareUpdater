@@ -56,23 +56,29 @@ private:
     void updateRareVersions();
     void updatePythonVersions();
 
+    void processProcess(QStringList cmd);
+
+    QFile* m_cmd_file;
+
     Versions *m_versions_rare;
     Versions *m_versions_python;
+
+    QString m_data_folder;
+    QString m_temp_folder;
+
     Downloader *m_downloader;
+
+    QProcess* m_proc;
+    QProcess* install_process;
+
     QMap<QString, QPointer<QCheckBox>> checkboxes;
     Config config;
     QSettings settings;
-    QProcess* m_proc;
-    QProcess* install_process;
-    QFile* m_cmdFile;
-    QList<QStringList> processes;
-    QPointer<QNetworkAccessManager> m_manager;
-    Ui::RareUpdater *ui;
-    DialogPages init_page;
-    QString m_applFolder;
-    QString m_tempFolder;
-    UPDATER_DEBUG(Console *m_console;)
 
-    void processProcess(QStringList cmd);
+    QList<QStringList> processes;
+    DialogPages init_page;
+
+    UPDATER_DEBUG(Console *m_console;)
+    Ui::RareUpdater *ui;
 };
 #endif // RareUpdater_H
