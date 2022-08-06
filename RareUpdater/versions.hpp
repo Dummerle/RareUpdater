@@ -35,6 +35,7 @@ signals:
 private:
     void parse(QNetworkReply *reply);
     bool error(QNetworkReply *reply);
+    bool redirect(QNetworkReply *reply);
 
     bool parseRareVersions(QNetworkReply *reply, QByteArray *data, QStringList *list);
     bool parsePythonVersions(QNetworkReply *reply, QByteArray *data, QStringList *list);

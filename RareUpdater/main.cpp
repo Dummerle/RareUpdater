@@ -26,7 +26,6 @@ int main(int argc, char *argv[])
             a.setStyleSheet(stylesheet);
         }
 
-
     a.setOrganizationName("Rare");
     a.setApplicationName("Rare");
 

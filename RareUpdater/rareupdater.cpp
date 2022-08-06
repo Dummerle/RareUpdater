@@ -20,7 +20,7 @@ RareUpdater::RareUpdater(QWidget *parent) :
     )
 
     QStringList args = qApp->arguments();
-    for (auto arg: args) {
+    for (const QString &arg: qAsConst(args)) {
         if (arg == "modify") {
             init_page = DialogPages::SETTINGS;
             break;
@@ -41,12 +41,12 @@ RareUpdater::RareUpdater(QWidget *parent) :
 
     ui->extra_space_lbl->setText(ui->extra_space_lbl->text().replace("{}", "0MB"));
 
-    connect(ui->install, SIGNAL(clicked()), this, SLOT(install()));
-    connect(ui->installed_launch, SIGNAL(clicked()), this, SLOT(launch()));
-    connect(ui->uninstall_btn, SIGNAL(clicked()), this, SLOT(uninstall()));
-    connect(ui->update_button, SIGNAL(clicked()), this, SLOT(update_rare()));
-    connect(ui->modify_btn, SIGNAL(clicked()), this, SLOT(modify_installation()));
-    connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
+    connect(ui->install, &QPushButton::clicked, this, &RareUpdater::install);
+    connect(ui->installed_launch, &QPushButton::clicked, this, &RareUpdater::launch);
+    connect(ui->uninstall_btn, &QPushButton::clicked, this, &RareUpdater::uninstall);
+    connect(ui->update_button, &QPushButton::clicked, this, &RareUpdater::update_rare);
+    connect(ui->modify_btn, &QPushButton::clicked, this, &RareUpdater::modify_installation);
+    connect(ui->launch_button, &QPushButton::clicked, this, &RareUpdater::launch);
 //    // TODO add console
 
     for (auto &dep: config.opt_dependencies) {
@@ -84,6 +84,7 @@ void RareUpdater::updateRareVersions() {
     QString current_version(settings.value(SettingsKeys::INSTALLED_VERSION, "").toString());
 
     ui->version_combo->addItems(m_versions_rare->all());
+    ui->version_combo->addItem("git");
     ui->version_combo->setCurrentIndex(1);
     if(current_version != ""){
         ui->version_combo->setCurrentText(current_version);
@@ -93,7 +94,7 @@ void RareUpdater::updateRareVersions() {
         qDebug() << "Settings";
         ui->page_stack->setCurrentIndex(DialogPages::SETTINGS);
     } else if (current_version == "git"
-               || m_versions_rare->all()[1] == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
+               || m_versions_rare->latest() == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
         ui->page_stack->setCurrentIndex(DialogPages::INSTALLED);
         ui->installed_info->setText(current_version);
         ui->space_info->setText(
@@ -104,7 +105,7 @@ void RareUpdater::updateRareVersions() {
         ui->page_stack->setCurrentIndex(DialogPages::UPDATE);
         ui->update_available_lbl->setText(
                 ui->update_available_lbl->text() + " " +
-                current_version + " -> " + m_versions_rare->all()[1]);
+                current_version + " -> " + m_versions_rare->latest());
     }
 }
 
@@ -216,12 +217,13 @@ void RareUpdater::processProcess(QStringList cmd) {
     install_process->setProcessChannelMode(QProcess::SeparateChannels);
     install_process->setProgram(cmd.takeFirst());
     install_process->setArguments(cmd);
-    connect(install_process, SIGNAL(finished(int, QProcess::ExitStatus)),
-            this, SLOT(processFinished(int, QProcess::ExitStatus)));
-    connect(install_process, SIGNAL(readyReadStandardOutput()),
-            this, SLOT(logStdOut()));
-    connect(install_process, SIGNAL(readyReadStandardError()),
-            this, SLOT(logStdErr()));
+
+    connect(install_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &RareUpdater::processFinished);
+    connect(install_process, &QProcess::readyReadStandardOutput,
+            this, &RareUpdater::logStdOut);
+    connect(install_process, &QProcess::readyReadStandardError,
+            this, &RareUpdater::logStdErr);
     install_process->start();
 }
 

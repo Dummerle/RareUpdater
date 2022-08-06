@@ -38,7 +38,24 @@ bool Versions::error(QNetworkReply *reply)
     return false;
 }
 
+bool Versions::redirect(QNetworkReply *reply) {
+    qDebug() << "redirect: "<< reply->url();
+    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (statusCode == 301 || statusCode == 302 || statusCode == 303 ||
+        statusCode == 305 || statusCode == 307 || statusCode == 308)
+    {
+        m_url = reply->url();
+        reply->close();
+        reply->deleteLater();
+        fetch();
+        return true;
+    }
+    return false;
+}
+
 void Versions::parse(QNetworkReply *reply) {
+    if (redirect(reply))
+        return;
     if (error(reply))
         return;
 
@@ -61,12 +78,8 @@ bool Versions::parseRareVersions(QNetworkReply *reply, QByteArray *data, QString
 {
     QJsonParseError error;
     QJsonDocument json(QJsonDocument::fromJson(*data, &error));
-    QStringList releases(json.object()["releases"].toObject().keys());
-    releases.append("git");
-
-    for (auto it=releases.rbegin(); it!=releases.rend(); ++it) {
-        m_versions.append(*it);
-    }
+    m_versions = json.object()["releases"].toObject().keys();
+    std::reverse(m_versions.begin(), m_versions.end());
 
     return !m_versions.isEmpty();
 }
@@ -77,7 +90,7 @@ bool Versions::parsePythonVersions(QNetworkReply *reply, QByteArray *data, QStri
     // The regex intentionally doesn't match 0 minor and non-bugfix versions
     QString pattern("<a href=\"(3\\.[1-9][0-9]*\\.[1-9]+)\\/\">");
 
-    QRegularExpression re(pattern);
+    static QRegularExpression re(pattern);
     QRegularExpressionMatchIterator match = re.globalMatch(doc);
     while (match.hasNext()) {
         m_versions.append(match.next().captured(1));

@@ -32,7 +32,7 @@
    <item>
     <widget class="QStackedWidget" name="page_stack">
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="loading_page">
       <layout class="QVBoxLayout" name="verticalLayout_6">

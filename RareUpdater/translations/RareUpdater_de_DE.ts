@@ -132,17 +132,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="214"/>
+        <location filename="../rareupdater.cpp" line="215"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="245"/>
+        <location filename="../rareupdater.cpp" line="247"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="296"/>
+        <location filename="../rareupdater.cpp" line="298"/>
         <source>Rare successfully uninstalled</source>
         <translation type="unfinished"></translation>
     </message>
