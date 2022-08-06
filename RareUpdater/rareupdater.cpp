@@ -30,7 +30,11 @@ RareUpdater::RareUpdater(QWidget *parent) :
     m_applFolder = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     m_tempFolder = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
 
-    m_downloader = new Downloader(m_applFolder, m_tempFolder, this);
+    m_downloader = new Downloader(m_tempFolder, this);
+    connect(m_downloader, &Downloader::progress, this, &RareUpdater::progress_update);
+    connect(m_downloader, &Downloader::finished, this, &RareUpdater::download_finished);
+    connect(m_downloader, &Downloader::current, this, &RareUpdater::current_download_changed);
+
     m_proc = new QProcess(this);
 
     m_cmdFile = new QFile(m_applFolder + "/pythonw.exe");
@@ -43,14 +47,7 @@ RareUpdater::RareUpdater(QWidget *parent) :
     connect(ui->update_button, SIGNAL(clicked()), this, SLOT(update_rare()));
     connect(ui->modify_btn, SIGNAL(clicked()), this, SLOT(modify_installation()));
     connect(ui->launch_button, SIGNAL(clicked()), this, SLOT(launch()));
-    // TODO add console
-    m_manager = new QNetworkAccessManager(this);
-    connect(m_manager, SIGNAL(finished(QNetworkReply * )), this, SLOT(loadingRequestFinished(QNetworkReply * )));
-    m_manager->get(QNetworkRequest(QUrl("https://pypi.org/pypi/Rare/json")));
-
-    connect(m_downloader, &Downloader::progress, this, &RareUpdater::progress_update);
-    connect(m_downloader, &Downloader::finished, this, &RareUpdater::download_finished);
-    connect(m_downloader, &Downloader::current, this, &RareUpdater::current_download_changed);
+//    // TODO add console
 
     for (auto &dep: config.opt_dependencies) {
         auto *box = new QCheckBox(dep.name());
@@ -60,31 +57,34 @@ RareUpdater::RareUpdater(QWidget *parent) :
         ui->optional_group_layout->addRow(box, info_lbl);
 
         checkboxes[dep.name()] = box;
-
     }
+
+    m_versions_rare = new Versions("https://pypi.org/pypi/Rare/json", Versions::Component::Rare, this);
+    connect(m_versions_rare, &Versions::finished, this, &RareUpdater::updateRareVersions);
+    m_versions_rare->fetch();
+
+    m_versions_python = new Versions("https://www.python.org/ftp/python/", Versions::Component::Python, this);
+    connect(m_versions_python, &Versions::finished, this, &RareUpdater::updatePythonVersions);
+    m_versions_python->fetch();
 }
 
 RareUpdater::~RareUpdater() {
+    UPDATER_DEBUG(
+    delete m_console;
+    )
+    delete m_downloader;
+    delete m_proc;
+    delete m_cmdFile;
     delete ui;
 }
 
-void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
-    if (reply->error() != QNetworkReply::NoError) {
-        QMessageBox::warning(this, "Error", reply->errorString());
-        return;
-    }
-    QJsonParseError error{};
-    QJsonDocument json(QJsonDocument::fromJson(reply->readAll().data(), &error));
-    QStringList releases;
-    releases = json.object()["releases"].toObject().keys();
-    std::reverse(releases.begin(), releases.end());
-    releases.insert(0, "git");
+void RareUpdater::updateRareVersions() {
+    qDebug() << "rare: " << m_versions_rare->latest();
+
     QString current_version(settings.value(SettingsKeys::INSTALLED_VERSION, "").toString());
 
-    ui->version_combo->addItems(releases);
+    ui->version_combo->addItems(m_versions_rare->all());
     ui->version_combo->setCurrentIndex(1);
-    reply->close();
-    reply->deleteLater();
     if(current_version != ""){
         ui->version_combo->setCurrentText(current_version);
     }
@@ -93,7 +93,7 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
         qDebug() << "Settings";
         ui->page_stack->setCurrentIndex(DialogPages::SETTINGS);
     } else if (current_version == "git"
-               || releases[1] == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
+               || m_versions_rare->all()[1] == settings.value(SettingsKeys::INSTALLED_VERSION, "")) {
         ui->page_stack->setCurrentIndex(DialogPages::INSTALLED);
         ui->installed_info->setText(current_version);
         ui->space_info->setText(
@@ -104,8 +104,13 @@ void RareUpdater::loadingRequestFinished(QNetworkReply *reply) {
         ui->page_stack->setCurrentIndex(DialogPages::UPDATE);
         ui->update_available_lbl->setText(
                 ui->update_available_lbl->text() + " " +
-                current_version + " -> " + releases[1]);
+                current_version + " -> " + m_versions_rare->all()[1]);
     }
+}
+
+void RareUpdater::updatePythonVersions()
+{
+    qDebug() << "python: " << m_versions_python->latest();
 }
 
 void RareUpdater::download_finished() {

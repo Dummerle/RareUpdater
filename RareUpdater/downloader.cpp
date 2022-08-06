@@ -1,16 +1,21 @@
 #include "downloader.h"
 
-Downloader::Downloader(
-        const QString& data_folder, const QString& temp_folder, QObject *parent) :
+Downloader::Downloader(const QString& temp_folder, QObject *parent) :
     QObject{parent}
 {
     m_manager = new QNetworkAccessManager(this);
     m_manager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
-    m_data_folder = data_folder;
     m_temp_folder = temp_folder;
 
     connect(this->m_manager, &QNetworkAccessManager::finished,
             this, &Downloader::downloadFinished);
+}
+
+Downloader::~Downloader()
+{
+    delete m_current_file;
+    delete m_reply;
+    delete m_manager;
 }
 
 void Downloader::downloadFiles(const QStringList& urls) {
@@ -27,18 +32,18 @@ void Downloader::downloadFiles(const QStringList& urls) {
 
 void Downloader::processRequest(const QNetworkRequest &request) {
     qDebug() << "temp dir: " << m_temp_folder;
-    m_download_file = new QFile(m_temp_folder + '/' + request.url().fileName());
-    qDebug() << "temp file: " << m_download_file->fileName();
+    m_current_file = new QFile(m_temp_folder + '/' + request.url().fileName());
+    qDebug() << "temp file: " << m_current_file->fileName();
 
-    if (m_download_file->exists()) {
-        qDebug() << "old file: " << m_download_file->fileName();
-        m_download_file->remove();
-        qDebug() << "removed: " << m_download_file->fileName();
+    if (m_current_file->exists()) {
+        qDebug() << "old file: " << m_current_file->fileName();
+        m_current_file->remove();
+        qDebug() << "removed: " << m_current_file->fileName();
     }
 
-    if (!m_download_file->open(QIODevice::WriteOnly)) {
-        qDebug() << m_download_file->fileName();
-        qDebug() << m_download_file->errorString();
+    if (!m_current_file->open(QIODevice::WriteOnly)) {
+        qDebug() << m_current_file->fileName();
+        qDebug() << m_current_file->errorString();
         return;
     }
 
@@ -52,22 +57,20 @@ void Downloader::processRequest(const QNetworkRequest &request) {
             this, &Downloader::downloadReadyRead);
     connect(this->m_reply, &QNetworkReply::downloadProgress,
             this, &Downloader::downloadProgress);
-
-    // connect network reply signals
-
 }
 
 void Downloader::downloadError(QNetworkReply::NetworkError err) {
-    qDebug() << err;
+    qDebug() << "error: " << m_current_file->fileName() << ", " << QString(err);
     m_reply->deleteLater();
-    m_download_file->close();
-    if (m_download_file->exists())
-        m_download_file->remove();
+    m_current_file->close();
+    if (m_current_file->exists())
+        m_current_file->remove();
+    emit error(m_current_file->fileName(), QString(err));
 }
 
 void Downloader::downloadReadyRead() {
     QByteArray contents = m_reply->readAll();
-    QDataStream stream(m_download_file);
+    QDataStream stream(m_current_file);
     stream.writeRawData(contents, contents.size());
 }
 
@@ -91,7 +94,7 @@ void Downloader::downloadFinished(QNetworkReply *reply) {
         m_reply->close();
         m_reply->deleteLater();
     }
-    m_download_file->close();
+    m_current_file->close();
 
     if (!m_requests.isEmpty()) {
         processRequest(m_requests.takeFirst());

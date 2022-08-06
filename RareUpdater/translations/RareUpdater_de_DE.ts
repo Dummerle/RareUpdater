@@ -132,17 +132,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="209"/>
+        <location filename="../rareupdater.cpp" line="214"/>
         <source>Running: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="240"/>
+        <location filename="../rareupdater.cpp" line="245"/>
         <source>Installation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../rareupdater.cpp" line="291"/>
+        <location filename="../rareupdater.cpp" line="296"/>
         <source>Rare successfully uninstalled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -173,6 +173,14 @@
     <message>
         <location filename="../uninstalldialog.ui" line="27"/>
         <source>Keep installed data</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>main</name>
+    <message>
+        <location filename="../external/html-qt/cmd/main.cpp" line="33"/>
+        <source>Source HTML file to parse.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

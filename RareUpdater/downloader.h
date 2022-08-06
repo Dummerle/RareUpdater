@@ -13,23 +13,26 @@
 #include <QStandardPaths>
 
 
-class Downloader : public QObject {
-Q_OBJECT
+class Downloader : public QObject
+{
+    Q_OBJECT
 public:
-    explicit Downloader(const QString&, const QString&, QObject *parent = nullptr);
+    explicit Downloader(const QString&, QObject *parent = nullptr);
+    ~Downloader () override;
 
     void downloadFiles(const QStringList& urls);
 
 signals:
     void progress(int);
     void finished();
+    void error(QString, QString);
     void current(QString);
 
 private:
     QPointer<QNetworkAccessManager> m_manager;
     QList<QNetworkRequest> m_requests;
     QNetworkReply *m_reply;
-    QFile *m_download_file;
+    QFile *m_current_file;
     QString m_data_folder;
     QString m_temp_folder;
 

@@ -15,6 +15,7 @@
 
 #include "enums.h"
 #include "downloader.h"
+#include "versions.hpp"
 #include "config.h"
 
 #ifdef QT_DEBUG
@@ -46,14 +47,18 @@ private slots:
     void progress_update(int);
     void download_finished();
     void processFinished(int exit_code, QProcess::ExitStatus e);
-    void loadingRequestFinished(QNetworkReply *reply);
     void current_download_changed(const QString&);
 
     void logStdOut();
     void logStdErr();
 
 private:
-    Downloader* m_downloader;
+    void updateRareVersions();
+    void updatePythonVersions();
+
+    Versions *m_versions_rare;
+    Versions *m_versions_python;
+    Downloader *m_downloader;
     QMap<QString, QPointer<QCheckBox>> checkboxes;
     Config config;
     QSettings settings;
