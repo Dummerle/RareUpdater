@@ -1,29 +1,13 @@
+mod install;
 
-use druid::{AppLauncher, Data, Env, EventCtx, Lens, lens, LocalizedString, UnitPoint, Widget, WidgetExt, WindowDesc};
+use install::{AppState, Version};
+
+use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc};
 use druid::commands::QUIT_APP;
-use druid::widget::{Button, Checkbox, ControllerHost, Flex, Label, RadioGroup};
+use druid::widget::{Button, Checkbox, Flex, Label, RadioGroup};
 
 const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rare Updater");
 
-#[derive(Clone, Copy, PartialEq, Data)]
-enum Version {
-    Stable,
-    Git,
-}
-
-#[derive(Clone, Data, Lens)]
-struct AppState {
-    install_pypresence: bool,
-    install_webview: bool,
-    version: Version,
-    info_text: String
-}
-
-impl AppState {
-    fn set_info_text(&mut self, text: String){
-        self.info_text = text;
-    }
-}
 
 pub fn main() {
     // describe the main window
@@ -32,22 +16,31 @@ pub fn main() {
         .window_size((400.0, 400.0));
 
     // create the initial app state
-    let initial_state = AppState {
-        install_webview: false,
-        install_pypresence: false,
-        version: Version::Stable,
-        info_text: "Downloading whatever...".into()
-    };
+    let initial_state = AppState::default();
 
     // start the application
     AppLauncher::with_window(main_window)
+        .delegate(Delegate {})
         .launch(initial_state)
         .expect("Failed to launch application");
 }
 
-fn install_rare(){
+struct Delegate;
 
+impl AppDelegate<AppState> for Delegate {
+    fn command(&mut self, _ctx: &mut DelegateCtx,
+               _target: Target, cmd: &Command, data: &mut AppState,
+               _env: &Env, ) -> Handled {
+        if let Some(text) = cmd.get(install::STATE_UPDATE) {
+            // If the command we received is `FINISH_SLOW_FUNCTION` handle the payload.
+            data.set_info_text(text.to_string());
+            Handled::Yes
+        } else {
+            Handled::No
+        }
+    }
 }
+
 
 fn build_root_widget() -> impl Widget<AppState> {
     let versions = [("Stable", Version::Stable), ("Git", Version::Git)];
@@ -67,10 +60,12 @@ fn build_root_widget() -> impl Widget<AppState> {
         ctx.submit_command(QUIT_APP);
     });
     let install_button = Button::new("Install").
-    on_click(|_ctx: &mut EventCtx, data: &mut AppState, _env: &Env| data.set_info_text("Lol".into()));;
+        on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
+            let _ = install::install(ctx.get_external_handle(), data);
+        });
 
     let info_text = Label::new(|data: &AppState, _env: &Env| {
-            data.info_text.to_string()
+        data.info_text.to_string()
     });
 
     let button_layout = Flex::row()
