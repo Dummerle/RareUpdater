@@ -1,0 +1,27 @@
+name: Rust
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+  
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --release
+   
+    - name: Upload Artifact
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/upload-artifact@v2
+      with:
+        name: rare-updater
+        path: ./target/release/rare-updater.exe
+   
