@@ -2,9 +2,10 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::Path;
 use std::string::String;
-use std::{thread};
+use std::{fs, io, thread};
 
 use druid::{Data, Lens, Selector, Target};
+use zip::result::ZipResult;
 
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
 
@@ -42,26 +43,80 @@ pub fn install(event_sink: druid::ExtEventSink, options: &mut AppState) {
         event_sink
             .submit_command(STATE_UPDATE, "Downloading Rare package".to_string(), Target::Auto)
             .expect("Can't send command");
-        let res = download_file(
+        let filename = match download_file(
             "https://github.com/Dummerle/Rare/releases/download/1.9.0-rc.3/Rare-Windows-1.9.0.11.zip".to_string(),
             // TODO: use env vars
             ".".to_string(),
-        );
+        ) {
+            Ok(filename) => filename,
+            Err(err) => {
+                event_sink
+                    .submit_command(STATE_UPDATE, format!("Installation failed: {err}").to_string(), Target::Auto)
+                    .expect("Can't send command");
+                return;
+            }
+        };
 
-        if res.is_err() {
-            event_sink
-                .submit_command(STATE_UPDATE, format!("Installation failed: {}", 5).to_string(), Target::Auto)
-                .expect("Can't send command");
-            return;
-        }
 
         event_sink.submit_command(STATE_UPDATE, "Extracting package".to_string(), Target::Auto)
             .expect("Can't send command");
+
+        match extract_zip_file(filename) {
+            Ok(_) => {}
+            Err(_) => {}
+        }
     });
 }
 
+fn extract_zip_file(filename: String) -> Result<(), String> {
+    let file = match File::open(&filename) {
+        Ok(file) => { file }
+        Err(err) => return Err(err.to_string())
+    };
 
-fn download_file(url: String, mut dest_path: String) -> Result<(), String> {
+    let mut archive = match zip::ZipArchive::new(file) {
+        Ok(archive) => archive,
+        Err(err) => return Err(err.to_string())
+    };
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+        let outpath = match file.enclosed_name() {
+            Some(path) => path.to_owned(),
+            None => continue,
+        };
+
+        {
+            let comment = file.comment();
+            if !comment.is_empty() {
+                println!("File {} comment: {}", i, comment);
+            }
+        }
+
+        if (*file.name()).ends_with('/') {
+            println!("File {} extracted to \"{}\"", i, outpath.display());
+            fs::create_dir_all(&outpath).unwrap();
+        } else {
+            println!(
+                "File {} extracted to \"{}\" ({} bytes)",
+                i,
+                outpath.display(),
+                file.size()
+            );
+            if let Some(p) = outpath.parent() {
+                if !p.exists() {
+                    fs::create_dir_all(&p).unwrap();
+                }
+            }
+            let mut outfile = fs::File::create(&outpath).unwrap();
+            io::copy(&mut file, &mut outfile).unwrap();
+        }
+    }
+    Ok(())
+}
+
+
+fn download_file(url: String, mut dest_path: String) -> Result<String, String> {
     let split = url.split("/");
     let file_name = split.last().unwrap().to_string();
 
@@ -89,6 +144,6 @@ fn download_file(url: String, mut dest_path: String) -> Result<(), String> {
         Err(err) => return Err(err.to_string())
     };
 
-    return Ok(());
+    return Ok(file_name);
 }
 
