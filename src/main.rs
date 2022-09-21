@@ -40,6 +40,9 @@ impl AppDelegate<AppState> for Delegate {
         } else if cmd.get(install::FINISHED).is_some() {
             data.set_info_text("Finished".to_string());
             Handled::Yes
+        } else if let Some(err) = cmd.get(install::ERROR){
+            data.set_info_text(err.to_string());
+            Handled::Yes
         }
 
         else {

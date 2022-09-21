@@ -1,9 +1,9 @@
 use std::fs::File;
 use std::io::{Write};
-use std::path::{Path};
+use std::path::{PathBuf};
 use std::string::String;
 use std::{fs, io, thread};
-use dirs::data_local_dir;
+use dirs::{cache_dir, data_local_dir};
 // use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{Data, ExtEventSink, Lens, Selector, Target};
@@ -53,13 +53,13 @@ impl AppState {
 pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
     thread::spawn(move || {
         event_sink
-            .submit_command(STATE_UPDATE, "Downloading Python".to_string(), Target::Auto)
+            .submit_command(STATE_UPDATE, "Downloading package".to_string(), Target::Auto)
             .expect("Can't send command");
 
         let filename = match download_file(
             "https://github.com/Dummerle/Rare/releases/download/1.9.0/Rare-Windows-1.9.0.zip".to_string(),
             // TODO: use env vars
-            ".".to_string(),
+            cache_dir().unwrap(),
         ) {
             Ok(filename) => filename,
             Err(err) => {
@@ -70,7 +70,7 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
             }
         };
 
-        match extract_zip_file(filename) {
+        match extract_zip_file(&filename) {
             Ok(_) => {}
             Err(err) => {
                 event_sink
@@ -80,6 +80,7 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
             }
         }
 
+        fs::remove_file(filename).unwrap();
 
 
         /*
@@ -113,14 +114,14 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
     });
 }
 
-fn extract_zip_file(filename: String) -> Result<(), String> {
+fn extract_zip_file(filename: &PathBuf) -> Result<(), String> {
     let file = match File::open(&filename) {
         Ok(file) => { file }
         Err(err) => return Err(err.to_string())
     };
     let base_path = data_local_dir().unwrap().join("Rare\\Python");
-    if !base_path.exists(){
-        match fs::create_dir_all(&base_path){
+    if !base_path.exists() {
+        match fs::create_dir_all(&base_path) {
             Ok(_) => {}
             Err(err) => return Err(err.to_string())
         };
@@ -172,7 +173,7 @@ fn extract_zip_file(filename: String) -> Result<(), String> {
 }
 
 
-fn download_file(url: String, mut dest_path: String) -> Result<String, String> {
+fn download_file(url: String, mut dest_path: PathBuf) -> Result<PathBuf, String> {
     let split = url.split("/");
     let file_name = split.last().unwrap().to_string();
 
@@ -184,11 +185,10 @@ fn download_file(url: String, mut dest_path: String) -> Result<String, String> {
         return Err(format!("Failed to download {}", url).to_string());
     }
 
-    dest_path.push_str("/");
-    dest_path.push_str(&*file_name);
-    let path = Path::new(dest_path.as_str());
 
-    let mut file = match File::create(&path) {
+    dest_path.push(file_name);
+
+    let mut file = match File::create(&dest_path) {
         Ok(file) => file,
         Err(err) => return Err(err.to_string())
     };
