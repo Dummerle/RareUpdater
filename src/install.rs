@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::{Write};
 use std::path::{PathBuf};
-use std::string::String;
 use std::{fs, io, thread};
+use std::time::Duration;
 use dirs::{cache_dir, data_local_dir};
+use serde::{Deserialize, Serialize};
 // use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{Data, ExtEventSink, Lens, Selector, Target};
@@ -11,6 +12,93 @@ use druid::{Data, ExtEventSink, Lens, Selector, Target};
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
 pub(crate) const FINISHED: Selector<()> = Selector::new("finished");
 pub(crate) const ERROR: Selector<String> = Selector::new("error");
+pub(crate) const STARTUP_ERROR: Selector<String> = Selector::new("startup_error");
+pub(crate) const STARTUP_READY: Selector<GitHubResponse> = Selector::new("gh_resp");
+
+
+#[derive(Serialize, Deserialize)]
+struct Asset {
+    name: String,
+    browser_download_url: String,
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct GitHubResponse {
+    url: String,
+    html_url: String,
+    pub tag_name: String,
+    name: String,
+    assets: Vec<Asset>,
+}
+
+impl GitHubResponse {
+    fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+
+    pub fn get() -> Result<GitHubResponse, String> {
+        let client = reqwest::blocking::Client::new();
+        let resp = match client.get("https://api.github.com/repos/Dummerle/Rare/releases/latest")
+            .header(reqwest::header::USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/105.0").send() {
+            Ok(resp) => resp,
+            Err(err) => return Err(err.to_string())
+        };
+
+        let body = resp.json::<GitHubResponse>().unwrap();
+
+        return Ok(body);
+    }
+
+    pub fn get_windows_download_link(&self) -> Result<String, String> {
+        for asset in self.assets.iter() {
+            if asset.name.starts_with("Rare-Windows") && asset.name.ends_with(".zip") {
+                return Ok(asset.browser_download_url.clone());
+            }
+        }
+        Err("Can't find download link".to_string())
+    }
+}
+#[derive(PartialEq, Eq, Clone, Data)]
+pub enum CurrentScreen{
+    Loading, Install, Error, Installed
+}
+
+#[derive(Clone, Data, Lens)]
+pub struct AppState {
+    pub installing: bool,
+    pub info_text: String,
+    pub latest_rare_version: Option<String>,
+    pub download_link: Option<String>,
+    pub current_screen: CurrentScreen,
+    pub error_string: String
+}
+
+impl AppState {
+    pub(crate) fn set_info_text(&mut self, text: String) {
+        self.info_text = text;
+    }
+
+    pub fn set_error_string(&mut self, text: String){
+        self.error_string = text;
+    }
+
+    pub fn default() -> AppState {
+        return AppState {
+            info_text: "".to_string(),
+            latest_rare_version: None,
+            installing: false,
+            download_link: None,
+            current_screen: CurrentScreen::Loading,
+            error_string: "".to_string()
+        };
+    }
+
+    pub fn get_download_link(&self) -> Option<String>{
+        return self.download_link.clone()
+    }
+
+}
 
 
 #[derive(Clone, Copy, PartialEq, Data)]
@@ -20,46 +108,43 @@ pub(crate) enum Version {
 }
 
 pub struct InstallOptions {
-    version: Version,
+    pub(crate) version: Version,
 }
 
-#[derive(Clone, Data, Lens)]
-pub struct AppState {
-    version: Version,
-    pub installing: bool,
-    pub(crate) info_text: String,
-}
-
-impl AppState {
-    pub(crate) fn set_info_text(&mut self, text: String) {
-        self.info_text = text;
+pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
+    let mut path = data_local_dir().unwrap().join("Rare");
+    if !remove_data {
+        path = path.join("Python");
     }
 
-    pub fn get_install_options(&self) -> InstallOptions {
-        InstallOptions {
-            version: self.version,
-        }
-    }
-
-    pub fn default() -> AppState {
-        return AppState {
-            info_text: "".to_string(),
-            version: Version::Stable,
-            installing: false,
-        };
+    if fs::remove_dir(path).is_err() {
+        event_sink
+            .submit_command(ERROR, "Removing the directory failed".to_string(), Target::Auto)
+            .expect("Can't send command");
+        return;
     }
 }
 
-pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
+pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
     thread::spawn(move || {
+        if update {
+            match fs::remove_dir(data_local_dir().unwrap().join("Rare").join("Python")) {
+                Ok(_) => {}
+                Err(err) => {
+                    event_sink
+                        .submit_command(ERROR, format!("Can't remove old files: {err}").to_string(), Target::Auto)
+                        .expect("Can't send command");
+                    return;
+                }
+            }
+        }
+
         event_sink
             .submit_command(STATE_UPDATE, "Downloading package".to_string(), Target::Auto)
             .expect("Can't send command");
 
         let filename = match download_file(
-            "https://github.com/Dummerle/Rare/releases/download/1.9.0/Rare-Windows-1.9.0.zip".to_string(),
-            // TODO: use env vars
-            cache_dir().unwrap(),
+            dl_url, cache_dir().unwrap(),
         ) {
             Ok(filename) => filename,
             Err(err) => {
@@ -69,8 +154,9 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
                 return;
             }
         };
+        let base_path = data_local_dir().unwrap().join("Rare");
 
-        match extract_zip_file(&filename) {
+        match extract_zip_file(&filename, base_path.clone().join("Python")) {
             Ok(_) => {}
             Err(err) => {
                 event_sink
@@ -81,6 +167,9 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
         }
 
         fs::remove_file(filename).unwrap();
+        //if !update {
+        //    fs::copy(std::env::current_exe().unwrap(), base_path).expect("Can't copy updater file");
+        //}
 
 
         /*
@@ -114,12 +203,12 @@ pub fn install(event_sink: ExtEventSink, _options: InstallOptions) {
     });
 }
 
-fn extract_zip_file(filename: &PathBuf) -> Result<(), String> {
+
+fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String> {
     let file = match File::open(&filename) {
         Ok(file) => { file }
         Err(err) => return Err(err.to_string())
     };
-    let base_path = data_local_dir().unwrap().join("Rare\\Python");
     if !base_path.exists() {
         match fs::create_dir_all(&base_path) {
             Ok(_) => {}
