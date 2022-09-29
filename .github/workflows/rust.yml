@@ -24,4 +24,12 @@ jobs:
       with:
         name: rare-updater
         path: ./target/release/rare-updater.exe
-   
+    - name: Upload to Release
+      if: github.event_name == 'release'
+      uses: svenstaro/upload-release-action@2.2.1
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: target/release/rare-updater.exe
+        asset_name: Build.zip
+        tag: ${{ github.ref }}
+        overwrite: true
