@@ -16,7 +16,7 @@ impl Config {
         if !PathBuf::from_str(path.as_str()).unwrap().exists(){
             return Config{
                 installed: false,
-                installed_version: "".to_string()
+                installed_version: "0.0.0".to_string()
             }
         }
         let data = fs::read_to_string(path).expect("Unable to read file");

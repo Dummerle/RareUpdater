@@ -10,7 +10,7 @@ use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEv
 use druid::commands::QUIT_APP;
 use druid::widget::{Button, Either, Flex, Label, ViewSwitcher};
 use crate::config::Config;
-use crate::install::{AppState, CurrentScreen, GitHubResponse, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED};
+use crate::install::{AppState, CurrentScreen, GitHubResponse, install, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED, Version};
 
 const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rare Updater");
 
@@ -46,21 +46,11 @@ impl AppDelegate<AppState> for Delegate {
         } else if cmd.get(install::INSTALLATION_FINISHED).is_some() {
             data.set_info_text("Finished".to_string());
             data.installing = false;
-
             data.current_screen = CurrentScreen::Installed;
-
-            let latest_version = match data.latest_rare_version.clone() {
-                None => {
-                    data.error_string = "Can't get latest version".to_string();
-                    data.current_screen = CurrentScreen::Error;
-                    return Handled::Yes;
-                }
-                Some(x) => x
-            };
-
+            data.installed_version = data.latest_rare_version.clone();
             let config = Config {
                 installed: true,
-                installed_version: latest_version,
+                installed_version: data.latest_rare_version.to_string(),
             };
             config.save();
 
@@ -78,11 +68,10 @@ impl AppDelegate<AppState> for Delegate {
                 }
             };
             let config = Config::read();
-            let installed_version = config.installed_version.as_str();
-            data.latest_rare_version = Some(gh_resp.tag_name.clone());
-            data.installed_version = config.installed_version.clone();
+            data.latest_rare_version = Version::from_string(gh_resp.tag_name.clone());
+            data.installed_version = Version::from_string(config.installed_version.clone());
             data.download_link = Some(dl_link);
-            if installed_version == "" {
+            if !config.installed {
                 data.current_screen = CurrentScreen::Install
             } else {
                 data.current_screen = CurrentScreen::Installed
@@ -97,7 +86,7 @@ impl AppDelegate<AppState> for Delegate {
             match Config::remove_file() {
                 Ok(_) => {
                     data.current_screen = CurrentScreen::Install;
-                    data.installed_version = "".to_string();
+                    data.installed_version = Version::new(0, 0, 0);
                     Handled::Yes
                 }
                 Err(err) => {
@@ -134,7 +123,7 @@ fn main_widget() -> impl Widget<AppState> {
         |data: &AppState, _env| data.current_screen.clone(),
         |selector, _data, _env| match selector {
             CurrentScreen::Install => {
-                Box::new(build_root_widget())
+                Box::new(install_screen())
             }
             CurrentScreen::Error => {
                 Box::new(error_screen())
@@ -152,17 +141,27 @@ fn main_widget() -> impl Widget<AppState> {
 fn installed_screen() -> impl Widget<AppState> {
     let title_label = Label::new("Rare installer").with_text_size(30.0);
 
-    let update_row = Flex::row()
-        .with_child(Label::new(
-            |data: &AppState, _: &Env| {
-                format!("Update available: {} -> {}",
-                        data.installed_version,
-                        data.latest_rare_version.as_ref().unwrap())
-            }
-        ))
-        .with_child(
-            Button::new("Update")
-        );
+    let version_row = Either::new(
+        |data: &AppState, _| {
+            !Version::eq(&data.installed_version, &data.latest_rare_version)
+        },
+        Flex::row()
+            .with_child(Label::new(
+                |data: &AppState, _: &Env| {
+                    format!("Update available: {} -> {}",
+                            data.installed_version.to_string(),
+                            data.latest_rare_version.to_string())
+                }
+            ))
+            .with_child(
+                Button::new("Update")
+                    .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
+                        data.current_screen = CurrentScreen::Install;
+                        install(ctx.get_external_handle(), true, data.download_link.clone().unwrap())
+                    })
+            ),
+        Label::new(|data: &AppState, _env: &Env| { format!("Version {} installed", data.installed_version.to_string()) }),
+    );
 
     let uninstall_button = Either::new(|data: &AppState, _| {
         !data.installing
@@ -180,6 +179,7 @@ fn installed_screen() -> impl Widget<AppState> {
 
     let layout = Flex::column()
         .with_child(title_label)
+        .with_child(version_row)
         .with_child(uninstall_button);
 
     return layout;
@@ -199,7 +199,7 @@ fn error_screen() -> impl Widget<AppState> {
         .with_child(error_text);
 }
 
-fn build_root_widget() -> impl Widget<AppState> {
+fn install_screen() -> impl Widget<AppState> {
     // let versions = [("Stable", Version::Stable), ("Git", Version::Git)];
 
     // a label that will determine its text based on the current app data.

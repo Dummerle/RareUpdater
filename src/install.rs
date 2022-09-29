@@ -2,12 +2,12 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::{PathBuf};
 use std::{fs, io, thread};
-use dirs::{cache_dir, data_local_dir, desktop_dir};
+use dirs::{cache_dir, data_local_dir, desktop_dir, data_dir};
 use serde::{Deserialize, Serialize};
-// use mslnk::ShellLink;
 // use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{Data, ExtEventSink, Lens, Selector, Target};
+use mslnk::ShellLink;
 
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
 pub(crate) const INSTALLATION_FINISHED: Selector<()> = Selector::new("finished");
@@ -22,7 +22,6 @@ struct Asset {
     name: String,
     browser_download_url: String,
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct GitHubResponse {
@@ -73,12 +72,55 @@ pub enum CurrentScreen {
 pub struct AppState {
     pub installing: bool,
     pub info_text: String,
-    pub latest_rare_version: Option<String>,
-    pub installed_version: String,
+    pub latest_rare_version: Version,
+    pub installed_version: Version,
     pub download_link: Option<String>,
     pub current_screen: CurrentScreen,
     pub error_string: String,
 }
+
+#[derive(Clone, PartialEq, Eq, Data)]
+pub struct Version {
+    major: u8,
+    minor: u8,
+    bug_fix: u8,
+}
+
+
+impl Version {
+    pub fn from_string(version_string: String) -> Version {
+        let mut iter = version_string.splitn(3, '.');
+
+        let major = iter.next().unwrap();
+        let minor = iter.next().unwrap();
+        let bug_fix = iter.next().unwrap();
+
+        return Version {
+            major: major.parse::<u8>().unwrap(),
+            minor: minor.parse::<u8>().unwrap(),
+            bug_fix: bug_fix.parse::<u8>().unwrap(),
+        };
+    }
+
+    pub fn new(x1: u8, x2: u8, x3: u8) -> Version {
+        Version {
+            major: x1,
+            minor: x2,
+            bug_fix: x3,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        return format!("{}.{}.{}", self.major, self.minor, self.bug_fix);
+    }
+
+    pub fn eq(v1: &Version, v2: &Version) -> bool {
+        return v1.major == v2.major
+            && v1.minor == v2.minor
+            && v1.bug_fix == v2.bug_fix;
+    }
+}
+
 
 impl AppState {
     pub(crate) fn set_info_text(&mut self, text: String) {
@@ -92,12 +134,12 @@ impl AppState {
     pub fn new(installed_rare_version: String) -> AppState {
         return AppState {
             info_text: "".to_string(),
-            latest_rare_version: None,
+            latest_rare_version: Version::new(0, 0, 0),
             installing: false,
             download_link: None,
             current_screen: CurrentScreen::Loading,
             error_string: "".to_string(),
-            installed_version: installed_rare_version,
+            installed_version: Version::from_string(installed_rare_version),
         };
     }
 
@@ -125,7 +167,21 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
                 return;
             }
         }
-        println!("Removed data dir");
+        println!("Removing Shortcuts");
+
+        for link in [desktop_dir().unwrap().join("Rare.lnk"), data_dir().unwrap()
+            .join("Microsoft").join("Windows")
+            .join("Start Menu").join("Programs").join("Rare.lnk")] {
+            let link_copy = link.clone();
+            match fs::remove_file(link_copy) {
+                Ok(_) => {}
+                Err(err) => {
+                    println!("An error occurred while removing '{}' {}",
+                             link.into_os_string().into_string().unwrap().as_str(), err.to_string())
+                }
+            };
+        }
+
         event_sink.submit_command(UNINSTALL_FINISHED, (), Target::Auto)
             .expect("Failed to send command")
     }
@@ -135,7 +191,7 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
 pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
     thread::spawn(move || {
         if update {
-            match fs::remove_dir(data_local_dir().unwrap().join("Rare").join("Python")) {
+            match fs::remove_dir_all(data_local_dir().unwrap().join("Rare").join("Python")) {
                 Ok(_) => {}
                 Err(err) => {
                     event_sink
@@ -162,6 +218,9 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
             }
         };
         let base_path = data_local_dir().unwrap().join("Rare");
+        event_sink
+            .submit_command(STATE_UPDATE, "Extracting package".to_string(), Target::Auto)
+            .expect("Can't send command");
 
         match extract_zip_file(&filename, base_path.clone().join("Python")) {
             Ok(_) => {}
@@ -173,10 +232,14 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
             }
         }
 
+        event_sink
+            .submit_command(STATE_UPDATE, "Cleaning up".to_string(), Target::Auto)
+            .expect("Can't send command");
         fs::remove_file(filename).unwrap();
 
-        create_desktop_link();
-
+        if !update {
+            create_links();
+        }
         //if !update {
         //    fs::copy(std::env::current_exe().unwrap(), base_path).expect("Can't copy updater file");
         //}
@@ -213,13 +276,17 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
     });
 }
 
-fn create_desktop_link() {
-    let link_path = desktop_dir().unwrap().join("Rare.lnk");
-    let target_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
-    let lnk = link_path.into_os_string().into_string().unwrap();
-    let target = target_path.into_os_string().into_string().unwrap();
-    let sl = ShellLink::new(target.as_str()).unwrap();
-    sl.create_lnk(lnk.as_str()).unwrap();
+fn create_links() {
+    for link in [desktop_dir().unwrap().join("Rare.lnk"), data_dir().unwrap()
+        .join("Microsoft").join("Windows")
+        .join("Start Menu").join("Programs").join("Rare.lnk")] {
+        println!("{}", link.clone().into_os_string().into_string().unwrap().as_str());
+        let target_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
+        let lnk = link.into_os_string().into_string().unwrap();
+        let target = target_path.into_os_string().into_string().unwrap();
+        let sl = ShellLink::new(target.as_str()).unwrap();
+        sl.create_lnk(lnk.as_str()).unwrap();
+    }
 }
 
 fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String> {
