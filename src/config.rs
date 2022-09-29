@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -33,12 +32,11 @@ impl Config {
         fs::write(Config::get_config_path().as_str(), serde_json::to_string_pretty(self).unwrap()).expect("TODO: panic message");
     }
 
-    pub fn set_version(&mut self, version: String){
-        self.installed_version = version;
-    }
-
-    pub fn set_installed(&mut self, installed: bool){
-        self.installed = installed;
+    pub fn remove_file() -> Result<(), String>{
+        match fs::remove_file(Config::get_config_path()) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err.to_string())
+        }
     }
 
 }

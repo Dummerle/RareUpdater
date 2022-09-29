@@ -1,16 +1,16 @@
+#![windows_subsystem = "windows"]
 extern crate core;
 
 mod install;
 mod config;
 
 use std::thread;
-use std::time::Duration;
 
-use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc, WindowId};
+use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc};
 use druid::commands::QUIT_APP;
-use druid::widget::{Button, Either, Flex, Label, RadioGroup, ViewSwitcher};
+use druid::widget::{Button, Either, Flex, Label, ViewSwitcher};
 use crate::config::Config;
-use crate::install::{AppState, CurrentScreen, GitHubResponse, InstallOptions, STARTUP_ERROR, STARTUP_READY};
+use crate::install::{AppState, CurrentScreen, GitHubResponse, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED};
 
 const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rare Updater");
 
@@ -20,8 +20,9 @@ pub fn main() {
         .title(WINDOW_TITLE)
         .window_size((400.0, 400.0));
 
+    let config = Config::read();
     // create the initial app state
-    let initial_state = AppState::default();
+    let initial_state = AppState::new(config.installed_version);
 
     // start the application
     let launcher = AppLauncher::with_window(main_window).delegate(Delegate {});
@@ -42,7 +43,7 @@ impl AppDelegate<AppState> for Delegate {
             // If the command we received is `FINISH_SLOW_FUNCTION` handle the payload.
             data.set_info_text(text.to_string());
             Handled::Yes
-        } else if cmd.get(install::FINISHED).is_some() {
+        } else if cmd.get(install::INSTALLATION_FINISHED).is_some() {
             data.set_info_text("Finished".to_string());
             data.installing = false;
 
@@ -50,6 +51,7 @@ impl AppDelegate<AppState> for Delegate {
 
             let latest_version = match data.latest_rare_version.clone() {
                 None => {
+                    data.error_string = "Can't get latest version".to_string();
                     data.current_screen = CurrentScreen::Error;
                     return Handled::Yes;
                 }
@@ -71,18 +73,39 @@ impl AppDelegate<AppState> for Delegate {
                 Ok(dl_link) => dl_link,
                 Err(err) => {
                     data.set_info_text(err);
+                    data.current_screen = CurrentScreen::Error;
                     return Handled::Yes;
                 }
             };
-
+            let config = Config::read();
+            let installed_version = config.installed_version.as_str();
             data.latest_rare_version = Some(gh_resp.tag_name.clone());
+            data.installed_version = config.installed_version.clone();
             data.download_link = Some(dl_link);
-            data.current_screen = CurrentScreen::Install;
+            if installed_version == "" {
+                data.current_screen = CurrentScreen::Install
+            } else {
+                data.current_screen = CurrentScreen::Installed
+            }
             Handled::Yes
         } else if let Some(err) = cmd.get(install::STARTUP_ERROR) {
-            data.current_screen = install::CurrentScreen::Error;
+            data.current_screen = CurrentScreen::Error;
             data.set_error_string(err.to_string());
             Handled::Yes
+        } else if cmd.get(UNINSTALL_FINISHED).is_some() {
+            data.installing = false;
+            match Config::remove_file() {
+                Ok(_) => {
+                    data.current_screen = CurrentScreen::Install;
+                    data.installed_version = "".to_string();
+                    Handled::Yes
+                }
+                Err(err) => {
+                    data.current_screen = CurrentScreen::Error;
+                    data.error_string = err.to_string();
+                    Handled::Yes
+                }
+            }
         } else {
             Handled::No
         }
@@ -105,6 +128,8 @@ fn load_startup(event_sink: ExtEventSink) {
 fn main_widget() -> impl Widget<AppState> {
     let config = Config::read();
 
+    if config.installed {}
+
     return ViewSwitcher::new(
         |data: &AppState, _env| data.current_screen.clone(),
         |selector, _data, _env| match selector {
@@ -114,19 +139,50 @@ fn main_widget() -> impl Widget<AppState> {
             CurrentScreen::Error => {
                 Box::new(error_screen())
             }
-            CurrentScreen:: Installed=>{
+            CurrentScreen::Installed => {
                 Box::new(installed_screen())
             }
-            _ => {
-                Box::new(Label::new("Error"))
+            CurrentScreen::Loading => {
+                Box::new(loading_screen())
             }
-        }
+        },
     );
-
 }
 
-fn installed_screen() -> impl Widget<AppState>{
-    return Label::new("Installed TODO")
+fn installed_screen() -> impl Widget<AppState> {
+    let title_label = Label::new("Rare installer").with_text_size(30.0);
+
+    let update_row = Flex::row()
+        .with_child(Label::new(
+            |data: &AppState, _: &Env| {
+                format!("Update available: {} -> {}",
+                        data.installed_version,
+                        data.latest_rare_version.as_ref().unwrap())
+            }
+        ))
+        .with_child(
+            Button::new("Update")
+        );
+
+    let uninstall_button = Either::new(|data: &AppState, _| {
+        !data.installing
+    },
+                                       Button::new("Uninstall")
+                                           .on_click(
+                                               |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
+                                                   data.installing = true;
+                                                   println!("Uninstall Rare");
+                                                   uninstall(ctx.get_external_handle(), false)
+                                               }
+                                           ),
+                                       Label::new("Uninstalling"),
+    );
+
+    let layout = Flex::column()
+        .with_child(title_label)
+        .with_child(uninstall_button);
+
+    return layout;
 }
 
 fn loading_screen() -> impl Widget<AppState> {
@@ -136,7 +192,7 @@ fn loading_screen() -> impl Widget<AppState> {
 fn error_screen() -> impl Widget<AppState> {
     let title = Label::new("Oops, an error occurred").with_text_size(20.0);
 
-    let error_text = Label::new(|data: &AppState, env: &Env| { data.error_string.to_string()});
+    let error_text = Label::new(|data: &AppState, _: &Env| { data.error_string.to_string() });
 
     return Flex::column()
         .with_child(title)

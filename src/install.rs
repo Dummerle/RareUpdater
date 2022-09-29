@@ -2,18 +2,19 @@ use std::fs::File;
 use std::io::{Write};
 use std::path::{PathBuf};
 use std::{fs, io, thread};
-use std::time::Duration;
-use dirs::{cache_dir, data_local_dir};
+use dirs::{cache_dir, data_local_dir, desktop_dir};
 use serde::{Deserialize, Serialize};
+// use mslnk::ShellLink;
 // use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{Data, ExtEventSink, Lens, Selector, Target};
 
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
-pub(crate) const FINISHED: Selector<()> = Selector::new("finished");
+pub(crate) const INSTALLATION_FINISHED: Selector<()> = Selector::new("finished");
 pub(crate) const ERROR: Selector<String> = Selector::new("error");
 pub(crate) const STARTUP_ERROR: Selector<String> = Selector::new("startup_error");
 pub(crate) const STARTUP_READY: Selector<GitHubResponse> = Selector::new("gh_resp");
+pub(crate) const UNINSTALL_FINISHED: Selector<()> = Selector::new("uninstall_finished");
 
 
 #[derive(Serialize, Deserialize)]
@@ -59,19 +60,24 @@ impl GitHubResponse {
         Err("Can't find download link".to_string())
     }
 }
+
 #[derive(PartialEq, Eq, Clone, Data)]
-pub enum CurrentScreen{
-    Loading, Install, Error, Installed
+pub enum CurrentScreen {
+    Loading,
+    Install,
+    Error,
+    Installed,
 }
 
-#[derive(Clone, Data, Lens)]
+#[derive(Clone, Data, Lens, Eq, PartialEq)]
 pub struct AppState {
     pub installing: bool,
     pub info_text: String,
     pub latest_rare_version: Option<String>,
+    pub installed_version: String,
     pub download_link: Option<String>,
     pub current_screen: CurrentScreen,
-    pub error_string: String
+    pub error_string: String,
 }
 
 impl AppState {
@@ -79,50 +85,51 @@ impl AppState {
         self.info_text = text;
     }
 
-    pub fn set_error_string(&mut self, text: String){
+    pub fn set_error_string(&mut self, text: String) {
         self.error_string = text;
     }
 
-    pub fn default() -> AppState {
+    pub fn new(installed_rare_version: String) -> AppState {
         return AppState {
             info_text: "".to_string(),
             latest_rare_version: None,
             installing: false,
             download_link: None,
             current_screen: CurrentScreen::Loading,
-            error_string: "".to_string()
+            error_string: "".to_string(),
+            installed_version: installed_rare_version,
         };
     }
 
-    pub fn get_download_link(&self) -> Option<String>{
-        return self.download_link.clone()
+
+    pub fn get_download_link(&self) -> Option<String> {
+        return self.download_link.clone();
     }
-
 }
 
-
-#[derive(Clone, Copy, PartialEq, Data)]
-pub(crate) enum Version {
-    Stable,
-    Git,
-}
-
-pub struct InstallOptions {
-    pub(crate) version: Version,
-}
 
 pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
-    let mut path = data_local_dir().unwrap().join("Rare");
-    if !remove_data {
-        path = path.join("Python");
-    }
+    thread::spawn(move || {
+        let mut path = data_local_dir().unwrap().join("Rare");
+        if !remove_data {
+            path = path.join("Python");
+        }
 
-    if fs::remove_dir(path).is_err() {
-        event_sink
-            .submit_command(ERROR, "Removing the directory failed".to_string(), Target::Auto)
-            .expect("Can't send command");
-        return;
+        println!("Removing {}", &path.clone().into_os_string().into_string().unwrap().to_string());
+        match fs::remove_dir_all(path) {
+            Ok(_) => { println!("Removed") }
+            Err(err) => {
+                event_sink
+                    .submit_command(ERROR, format!("Removing the directory failed: {}", err.to_string()), Target::Auto)
+                    .expect("Can't send command");
+                return;
+            }
+        }
+        println!("Removed data dir");
+        event_sink.submit_command(UNINSTALL_FINISHED, (), Target::Auto)
+            .expect("Failed to send command")
     }
+    );
 }
 
 pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
@@ -167,6 +174,9 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
         }
 
         fs::remove_file(filename).unwrap();
+
+        create_desktop_link();
+
         //if !update {
         //    fs::copy(std::env::current_exe().unwrap(), base_path).expect("Can't copy updater file");
         //}
@@ -199,10 +209,18 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
         */
         // create desktop shortcut etc
 
-        event_sink.submit_command(FINISHED, (), Target::Auto).expect("Failed to send command")
+        event_sink.submit_command(INSTALLATION_FINISHED, (), Target::Auto).expect("Failed to send command")
     });
 }
 
+fn create_desktop_link() {
+    let link_path = desktop_dir().unwrap().join("Rare.lnk");
+    let target_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
+    let lnk = link_path.into_os_string().into_string().unwrap();
+    let target = target_path.into_os_string().into_string().unwrap();
+    let sl = ShellLink::new(target.as_str()).unwrap();
+    sl.create_lnk(lnk.as_str()).unwrap();
+}
 
 fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String> {
     let file = match File::open(&filename) {
