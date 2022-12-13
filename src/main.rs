@@ -4,7 +4,10 @@ extern crate core;
 mod install;
 mod config;
 
+use std::path::PathBuf;
 use std::thread;
+use dirs::data_local_dir;
+use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc};
 use druid::commands::QUIT_APP;
@@ -101,6 +104,16 @@ impl AppDelegate<AppState> for Delegate {
     }
 }
 
+fn launch_rare() {
+    let exe_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
+    let _ = Popen::create(&[exe_path.into_os_string().into_string().to_owned().unwrap().as_str()],
+                          PopenConfig {
+                              detached: true,
+                              ..Default::default()
+
+                          });
+}
+
 fn load_startup(event_sink: ExtEventSink) {
     thread::spawn(move || {
         let git_info = match GitHubResponse::get() {
@@ -177,10 +190,16 @@ fn installed_screen() -> impl Widget<AppState> {
                                        Label::new("Uninstalling"),
     );
 
+    let launch_button = Button::new("Launch")
+        .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env|{
+        launch_rare();
+    });
+
     let layout = Flex::column()
         .with_child(title_label)
         .with_child(version_row)
-        .with_child(uninstall_button);
+        .with_child(uninstall_button)
+        .with_child(launch_button);
 
     return layout;
 }
