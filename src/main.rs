@@ -170,6 +170,7 @@ fn installed_screen() -> impl Widget<AppState> {
                 Button::new("Update")
                     .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                         data.current_screen = CurrentScreen::Install;
+                        data.installing = true;
                         install(ctx.get_external_handle(), true, data.download_link.clone().unwrap())
                     })
             ),
