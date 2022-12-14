@@ -110,7 +110,6 @@ fn launch_rare() {
                           PopenConfig {
                               detached: true,
                               ..Default::default()
-
                           });
 }
 
@@ -177,30 +176,31 @@ fn installed_screen() -> impl Widget<AppState> {
         Label::new(|data: &AppState, _env: &Env| { format!("Version {} installed", data.installed_version.to_string()) }),
     );
 
+    let launch_button = Button::new("Launch")
+        .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
+            launch_rare();
+        });
+
+
     let uninstall_button = Either::new(|data: &AppState, _| {
         !data.installing
     },
-                                       Button::new("Uninstall")
+                                       Flex::column().with_child(Button::new("Uninstall")
                                            .on_click(
                                                |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
                                                    data.installing = true;
                                                    println!("Uninstall Rare");
                                                    uninstall(ctx.get_external_handle(), false)
                                                }
-                                           ),
+                                           )).with_child(launch_button),
                                        Label::new("Uninstalling"),
     );
 
-    let launch_button = Button::new("Launch")
-        .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env|{
-        launch_rare();
-    });
 
     let layout = Flex::column()
         .with_child(title_label)
         .with_child(version_row)
-        .with_child(uninstall_button)
-        .with_child(launch_button);
+        .with_child(uninstall_button);
 
     return layout;
 }
