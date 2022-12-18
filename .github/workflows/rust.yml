@@ -30,6 +30,6 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: target/release/rare-updater.exe
-        asset_name: Build.zip
+        asset_name: rare-updater.exe
         tag: ${{ github.ref }}
         overwrite: true
