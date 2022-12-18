@@ -4,9 +4,9 @@ use std::path::{PathBuf};
 use std::{fs, io, thread};
 use dirs::{cache_dir, data_local_dir, desktop_dir, data_dir};
 use serde::{Deserialize, Serialize};
-// use subprocess::{Popen, PopenConfig, Redirection};
 
 use druid::{Data, ExtEventSink, Lens, Selector, Target};
+#[cfg(windows)]
 use mslnk::ShellLink;
 
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
@@ -85,7 +85,6 @@ pub struct Version {
     minor: u8,
     bug_fix: u8,
 }
-
 
 impl Version {
     pub fn from_string(version_string: String) -> Version {
@@ -276,7 +275,14 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
     });
 }
 
+#[cfg(not(windows))]
+fn create_links(){
+    return;
+}
+
+#[cfg(windows)]
 fn create_links() {
+    use mslnk::ShellLink;
     for link in [desktop_dir().unwrap().join("Rare.lnk"), data_dir().unwrap()
         .join("Microsoft").join("Windows")
         .join("Start Menu").join("Programs").join("Rare.lnk")] {
@@ -306,8 +312,8 @@ fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String
         Err(err) => return Err(err.to_string())
     };
 
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i).unwrap();
+    for I in 0..archive.len() {
+        let mut file = archive.by_index(I).unwrap();
 
         let mut outpath = base_path.clone();
 
@@ -320,17 +326,17 @@ fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String
         {
             let comment = file.comment();
             if !comment.is_empty() {
-                println!("File {} comment: {}", i, comment);
+                println!("File {} comment: {}", I, comment);
             }
         }
 
         if (*file.name()).ends_with('/') {
-            println!("File {} extracted to \"{}\"", i, outpath.display());
+            println!("File {} extracted to \"{}\"", I, outpath.display());
             fs::create_dir_all(&outpath).unwrap();
         } else {
             println!(
                 "File {} extracted to \"{}\" ({} bytes)",
-                i,
+                I,
                 outpath.display(),
                 file.size()
             );

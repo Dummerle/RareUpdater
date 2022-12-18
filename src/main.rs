@@ -4,10 +4,9 @@ extern crate core;
 mod install;
 mod config;
 
-use std::path::PathBuf;
 use std::thread;
 use dirs::data_local_dir;
-use subprocess::{Popen, PopenConfig, Redirection};
+use subprocess::{Popen, PopenConfig};
 
 use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc};
 use druid::commands::QUIT_APP;
@@ -61,7 +60,7 @@ impl AppDelegate<AppState> for Delegate {
         } else if let Some(err) = cmd.get(install::ERROR) {
             data.set_info_text(err.to_string());
             Handled::Yes
-        } else if let Some(gh_resp) = cmd.get(install::STARTUP_READY) {
+        } else if let Some(gh_resp) = cmd.get(STARTUP_READY) {
             let dl_link = match gh_resp.get_windows_download_link() {
                 Ok(dl_link) => dl_link,
                 Err(err) => {
@@ -80,7 +79,7 @@ impl AppDelegate<AppState> for Delegate {
                 data.current_screen = CurrentScreen::Installed
             }
             Handled::Yes
-        } else if let Some(err) = cmd.get(install::STARTUP_ERROR) {
+        } else if let Some(err) = cmd.get(STARTUP_ERROR) {
             data.current_screen = CurrentScreen::Error;
             data.set_error_string(err.to_string());
             Handled::Yes
@@ -177,7 +176,7 @@ fn installed_screen() -> impl Widget<AppState> {
     );
 
     let launch_button = Button::new("Launch")
-        .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
+        .on_click(|_: &mut EventCtx, _: &mut AppState, _env: &Env| {
             launch_rare();
         });
 
