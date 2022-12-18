@@ -8,25 +8,24 @@ use std::thread;
 use dirs::data_local_dir;
 use subprocess::{Popen, PopenConfig};
 
-use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, UnitPoint, Widget, WidgetExt, WindowDesc};
+use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEventSink, Handled, LocalizedString, Target, Widget, WidgetExt, WindowDesc};
 use druid::commands::QUIT_APP;
-use druid::widget::{Button, Either, Flex, Label, ViewSwitcher};
+use druid::widget::{Button, Either, Flex, Label, LineBreaking, Padding, ViewSwitcher};
 use crate::config::Config;
-use crate::install::{AppState, CurrentScreen, GitHubResponse, install, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED, Version};
+use crate::install::{AppState, CurrentScreen, ERROR, GitHubResponse, install, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED, Version};
+
 
 const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rare Updater");
 
 
 pub fn main() {
     let main_window = WindowDesc::new(main_widget)
-        .title(WINDOW_TITLE)
+        .title(WINDOW_TITLE).resizable(false)
         .window_size((400.0, 400.0));
-
+        
     let config = Config::read();
-    // create the initial app state
     let initial_state = AppState::new(config.installed_version);
 
-    // start the application
     let launcher = AppLauncher::with_window(main_window).delegate(Delegate {});
     let event_sink = launcher.get_external_handle();
 
@@ -57,8 +56,9 @@ impl AppDelegate<AppState> for Delegate {
             config.save();
 
             Handled::Yes
-        } else if let Some(err) = cmd.get(install::ERROR) {
-            data.set_info_text(err.to_string());
+        } else if let Some(err) = cmd.get(ERROR) {
+            data.set_error_string(err.to_string());
+            data.current_screen = CurrentScreen::Error;
             Handled::Yes
         } else if let Some(gh_resp) = cmd.get(STARTUP_READY) {
             let dl_link = match gh_resp.get_windows_download_link() {
@@ -97,7 +97,8 @@ impl AppDelegate<AppState> for Delegate {
                     Handled::Yes
                 }
             }
-        } else {
+        }
+        else{
             Handled::No
         }
     }
@@ -107,7 +108,7 @@ fn launch_rare() {
     let exe_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
     let _ = Popen::create(&[exe_path.into_os_string().into_string().to_owned().unwrap().as_str()],
                           PopenConfig {
-                              detached: true,
+                              detached: false,
                               ..Default::default()
                           });
 }
@@ -126,11 +127,9 @@ fn load_startup(event_sink: ExtEventSink) {
 }
 
 fn main_widget() -> impl Widget<AppState> {
-    let config = Config::read();
+    let title_label = Padding::new((0.0, 20.0), Label::new("Rare Installer").with_text_size(30.0));
 
-    if config.installed {}
-
-    return ViewSwitcher::new(
+    let page_switch = ViewSwitcher::new(
         |data: &AppState, _env| data.current_screen.clone(),
         |selector, _data, _env| match selector {
             CurrentScreen::Install => {
@@ -147,10 +146,14 @@ fn main_widget() -> impl Widget<AppState> {
             }
         },
     );
+
+    return Flex::column()
+        .with_child(title_label)
+        .with_child(page_switch);
+
 }
 
 fn installed_screen() -> impl Widget<AppState> {
-    let title_label = Label::new("Rare installer").with_text_size(30.0);
 
     let version_row = Either::new(
         |data: &AppState, _| {
@@ -197,7 +200,6 @@ fn installed_screen() -> impl Widget<AppState> {
 
 
     let layout = Flex::column()
-        .with_child(title_label)
         .with_child(version_row)
         .with_child(uninstall_button);
 
@@ -211,8 +213,8 @@ fn loading_screen() -> impl Widget<AppState> {
 fn error_screen() -> impl Widget<AppState> {
     let title = Label::new("Oops, an error occurred").with_text_size(20.0);
 
-    let error_text = Label::new(|data: &AppState, _: &Env| { data.error_string.to_string() });
-
+    let mut error_text = Label::new(|data: &AppState, _: &Env| { data.error_string.to_string() });
+    error_text.set_line_break_mode(LineBreaking::WordWrap);
     return Flex::column()
         .with_child(title)
         .with_child(error_text);
@@ -220,9 +222,6 @@ fn error_screen() -> impl Widget<AppState> {
 
 fn install_screen() -> impl Widget<AppState> {
     // let versions = [("Stable", Version::Stable), ("Git", Version::Git)];
-
-    // a label that will determine its text based on the current app data.
-    let title = Label::new("Rare installer").with_text_size(30.0);
 
     /* let pypresence_checkbox = Checkbox::new("PyPresence (To show running games on Discord)")
          .lens(AppState::install_pypresence);
@@ -257,18 +256,15 @@ fn install_screen() -> impl Widget<AppState> {
         |data: &AppState, _env| !data.installing,
         Flex::row()
             .with_child(cancel_button)
-            .with_child(install_button),
-        Label::new("Installing"),
+            .with_child(install_button).center(),
+        Label::new("Installing").center(),
     );
 
     let layout = Flex::column()
-        .with_child(title)
         // .with_child(pypresence_checkbox)
         // .with_child(webview_checkbox)
         //  .with_child(radio)
         .with_child(info_text)
-        .with_child(button_layout)
-        .align_horizontal(UnitPoint::TOP_LEFT)
-        .padding(5.0);
+        .with_child(button_layout);
     return layout;
 }

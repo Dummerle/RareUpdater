@@ -33,7 +33,7 @@ pub struct GitHubResponse {
 }
 
 impl GitHubResponse {
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
 
@@ -148,6 +148,27 @@ impl AppState {
     }
 }
 
+fn get_shortcut_dirs() -> Vec<PathBuf>{
+    let mut paths: Vec<PathBuf> = Vec::new();
+
+    match desktop_dir() {
+        None => { print!("Can't find data local dir"); }
+        Some(res) => {
+            paths.push(res.join("Rare.lnk"));
+        }
+    }
+    match data_dir() {
+        None => {println!("Can't find data dir")}
+        Some(mut res ) => {
+            res = res.join("Microsoft").join("Windows")
+                .join("Start Menu").join("Programs").join("Rare.lnk");
+            paths.push(res)
+        }
+    }
+
+    return paths;
+}
+
 
 pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
     thread::spawn(move || {
@@ -157,20 +178,21 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
         }
 
         println!("Removing {}", &path.clone().into_os_string().into_string().unwrap().to_string());
-        match fs::remove_dir_all(path) {
-            Ok(_) => { println!("Removed") }
-            Err(err) => {
-                event_sink
-                    .submit_command(ERROR, format!("Removing the directory failed: {}", err.to_string()), Target::Auto)
-                    .expect("Can't send command");
-                return;
+
+        if path.exists() {
+            match fs::remove_dir_all(path) {
+                Ok(_) => { println!("Removed") }
+                Err(err) => {
+                    event_sink
+                        .submit_command(ERROR, format!("Removing the directory failed: {}", err.to_string()), Target::Auto)
+                        .expect("Can't send command");
+                    return;
+                }
             }
         }
         println!("Removing Shortcuts");
 
-        for link in [desktop_dir().unwrap().join("Rare.lnk"), data_dir().unwrap()
-            .join("Microsoft").join("Windows")
-            .join("Start Menu").join("Programs").join("Rare.lnk")] {
+        for link in get_shortcut_dirs(){
             let link_copy = link.clone();
             match fs::remove_file(link_copy) {
                 Ok(_) => {}
@@ -276,16 +298,13 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
 }
 
 #[cfg(not(windows))]
-fn create_links(){
+fn create_links() {
     return;
 }
 
 #[cfg(windows)]
 fn create_links() {
-    use mslnk::ShellLink;
-    for link in [desktop_dir().unwrap().join("Rare.lnk"), data_dir().unwrap()
-        .join("Microsoft").join("Windows")
-        .join("Start Menu").join("Programs").join("Rare.lnk")] {
+    for link in get_shortcut_dirs() {
         println!("{}", link.clone().into_os_string().into_string().unwrap().as_str());
         let target_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
         let lnk = link.into_os_string().into_string().unwrap();
@@ -312,8 +331,8 @@ fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String
         Err(err) => return Err(err.to_string())
     };
 
-    for I in 0..archive.len() {
-        let mut file = archive.by_index(I).unwrap();
+    for s in 0..archive.len() {
+        let mut file = archive.by_index(s).unwrap();
 
         let mut outpath = base_path.clone();
 
@@ -326,17 +345,17 @@ fn extract_zip_file(filename: &PathBuf, base_path: PathBuf) -> Result<(), String
         {
             let comment = file.comment();
             if !comment.is_empty() {
-                println!("File {} comment: {}", I, comment);
+                println!("File {} comment: {}", s, comment);
             }
         }
 
         if (*file.name()).ends_with('/') {
-            println!("File {} extracted to \"{}\"", I, outpath.display());
+            println!("File {} extracted to \"{}\"", s, outpath.display());
             fs::create_dir_all(&outpath).unwrap();
         } else {
             println!(
                 "File {} extracted to \"{}\" ({} bytes)",
-                I,
+                s,
                 outpath.display(),
                 file.size()
             );
