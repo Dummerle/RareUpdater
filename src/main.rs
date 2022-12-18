@@ -108,7 +108,7 @@ fn launch_rare() {
     let exe_path = data_local_dir().unwrap().join("Rare").join("Python").join("rare.exe");
     let _ = Popen::create(&[exe_path.into_os_string().into_string().to_owned().unwrap().as_str()],
                           PopenConfig {
-                              detached: false,
+                              detached: true,
                               ..Default::default()
                           });
 }
