@@ -48,6 +48,7 @@ impl AppDelegate<AppState> for Delegate {
             data.set_info_text("Finished".to_string());
             data.installing = false;
             data.current_screen = CurrentScreen::Installed;
+            data.set_error_string("".to_string());
             data.installed_version = data.latest_rare_version.clone();
             let config = Config {
                 installed: true,
@@ -181,6 +182,8 @@ fn installed_screen() -> impl Widget<AppState> {
                         if installs {
                             data.current_screen = CurrentScreen::Install;
                             data.installing = true;
+                        } else {
+                            data.set_error_string("Files are locked. Please kill rare first".to_string());
                         }
                     })
             ),
@@ -202,12 +205,13 @@ fn installed_screen() -> impl Widget<AppState> {
                                                    if uninstall(ctx.get_external_handle(), false) {
                                                        data.installing = true;
                                                        println!("Uninstall Rare");
+                                                   } else {
+                                                       data.set_error_string("Files are locked. Please kill rare first".to_string());
                                                    }
                                                }
                                            )).with_child(launch_button),
                                        Label::new("Uninstalling"),
     );
-
     let mut info_text = Label::new(|data: &AppState, _: &Env| { data.error_string.to_string() });
     info_text.set_line_break_mode(LineBreaking::WordWrap);
     let layout = Flex::column()

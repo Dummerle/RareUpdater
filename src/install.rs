@@ -150,7 +150,7 @@ impl AppState {
     }
 }
 
-fn get_shortcut_dirs() -> Vec<PathBuf>{
+fn get_shortcut_dirs() -> Vec<PathBuf> {
     let mut paths: Vec<PathBuf> = Vec::new();
 
     match desktop_dir() {
@@ -160,8 +160,8 @@ fn get_shortcut_dirs() -> Vec<PathBuf>{
         }
     }
     match data_dir() {
-        None => {println!("Can't find data dir")}
-        Some(mut res ) => {
+        None => { println!("Can't find data dir") }
+        Some(mut res) => {
             res = res.join("Microsoft").join("Windows")
                 .join("Start Menu").join("Programs").join("Rare.lnk");
             paths.push(res)
@@ -170,15 +170,16 @@ fn get_shortcut_dirs() -> Vec<PathBuf>{
 
     return paths;
 }
-fn get_rare_dir() -> PathBuf{
-    return data_local_dir().unwrap().join("Rare")
+
+fn get_rare_dir() -> PathBuf {
+    return data_local_dir().unwrap().join("Rare");
 }
 
 
-pub fn uninstall(event_sink: ExtEventSink, remove_data: bool)->bool {
-    if is_file_locked(get_rare_dir().join("Python").join(LOCKED_FILE)){
+pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) -> bool {
+    if is_file_locked(get_rare_dir().join("Python").join(LOCKED_FILE)) {
         println!("File is locked. Do not uninstall");
-        return false
+        return false;
     }
     thread::spawn(move || {
         let mut path = get_rare_dir();
@@ -201,7 +202,7 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool)->bool {
         }
         println!("Removing Shortcuts");
 
-        for link in get_shortcut_dirs(){
+        for link in get_shortcut_dirs() {
             let link_copy = link.clone();
             match fs::remove_file(link_copy) {
                 Ok(_) => {}
@@ -219,47 +220,59 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool)->bool {
     return true;
 }
 
-fn is_file_locked(file: PathBuf) -> bool{
-    if !file.exists(){
+fn is_file_locked(file: PathBuf) -> bool {
+    if !file.exists() {
         println!("File does not exist");
-        return false
+        return false;
     }
     let mut new_file = file.clone();
     new_file.pop();
     new_file.push("test.tmp");
 
-    match fs::copy(&file, &new_file){
+    match fs::copy(&file, &new_file) {
         Ok(_) => {}
-        Err(err) => {format!("Can't move file: {err}"); return true}
+        Err(err) => {
+            format!("Can't move file: {err}");
+            return true;
+        }
     }
 
-    match fs::remove_file(&file){
+    match fs::remove_file(&file) {
         Ok(_) => {
             let _ = fs::rename(&new_file, &file).ok();
         }
-        Err(err) => {format!("File is locked: {err}"); return true}
+        Err(err) => {
+            format!("File is locked: {err}");
+            return true;
+        }
     }
     println!("File is not locked");
-    return false
+    return false;
 }
 
 pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) -> bool {
     let exe_path = get_rare_dir().join("Python").join(LOCKED_FILE);
-    if is_file_locked(exe_path){
+    if is_file_locked(exe_path) {
         println!("File is locked. Do not update");
-        return false
+        return false;
     }
 
     thread::spawn(move || {
         if update {
-            match fs::remove_dir_all(data_local_dir().unwrap().join("Rare").join("Python")) {
-                Ok(_) => {}
-                Err(err) => {
-                    event_sink
-                        .submit_command(ERROR, format!("Can't remove old files: {err}").to_string(), Target::Auto)
-                        .expect("Can't send command");
-                    return;
+            let file = get_rare_dir().join("Python");
+            if file.exists() {
+                match fs::remove_dir_all(file) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        event_sink
+                            .submit_command(ERROR, format!("Can't remove old files: {err}").to_string(), Target::Auto)
+                            .expect("Can't send command");
+                        return;
+                    }
                 }
+            }
+            else{
+                println!("Files do not exist. Ignore...");
             }
         }
 
