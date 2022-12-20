@@ -12,10 +12,12 @@ use mslnk::ShellLink;
 pub(crate) const STATE_UPDATE: Selector<String> = Selector::new("state_update");
 pub(crate) const INSTALLATION_FINISHED: Selector<()> = Selector::new("finished");
 pub(crate) const ERROR: Selector<String> = Selector::new("error");
+pub(crate) const UNINSTALL_ERROR: Selector<String> = Selector::new("uninstall_error");
 pub(crate) const STARTUP_ERROR: Selector<String> = Selector::new("startup_error");
 pub(crate) const STARTUP_READY: Selector<GitHubResponse> = Selector::new("gh_resp");
 pub(crate) const UNINSTALL_FINISHED: Selector<()> = Selector::new("uninstall_finished");
 
+const LOCKED_FILE: &str = "rare.exe";
 
 #[derive(Serialize, Deserialize)]
 struct Asset {
@@ -168,11 +170,18 @@ fn get_shortcut_dirs() -> Vec<PathBuf>{
 
     return paths;
 }
+fn get_rare_dir() -> PathBuf{
+    return data_local_dir().unwrap().join("Rare")
+}
 
 
-pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
+pub fn uninstall(event_sink: ExtEventSink, remove_data: bool)->bool {
+    if is_file_locked(get_rare_dir().join("Python").join(LOCKED_FILE)){
+        println!("File is locked. Do not uninstall");
+        return false
+    }
     thread::spawn(move || {
-        let mut path = data_local_dir().unwrap().join("Rare");
+        let mut path = get_rare_dir();
         if !remove_data {
             path = path.join("Python");
         }
@@ -184,7 +193,7 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
                 Ok(_) => { println!("Removed") }
                 Err(err) => {
                     event_sink
-                        .submit_command(ERROR, format!("Removing the directory failed: {}", err.to_string()), Target::Auto)
+                        .submit_command(UNINSTALL_ERROR, format!("Removing the directory failed: {}", err.to_string()), Target::Auto)
                         .expect("Can't send command");
                     return;
                 }
@@ -207,9 +216,40 @@ pub fn uninstall(event_sink: ExtEventSink, remove_data: bool) {
             .expect("Failed to send command")
     }
     );
+    return true;
 }
 
-pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
+fn is_file_locked(file: PathBuf) -> bool{
+    if !file.exists(){
+        println!("File does not exist");
+        return false
+    }
+    let mut new_file = file.clone();
+    new_file.pop();
+    new_file.push("test.tmp");
+
+    match fs::copy(&file, &new_file){
+        Ok(_) => {}
+        Err(err) => {format!("Can't move file: {err}"); return true}
+    }
+
+    match fs::remove_file(&file){
+        Ok(_) => {
+            let _ = fs::rename(&new_file, &file).ok();
+        }
+        Err(err) => {format!("File is locked: {err}"); return true}
+    }
+    println!("File is not locked");
+    return false
+}
+
+pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) -> bool {
+    let exe_path = get_rare_dir().join("Python").join(LOCKED_FILE);
+    if is_file_locked(exe_path){
+        println!("File is locked. Do not update");
+        return false
+    }
+
     thread::spawn(move || {
         if update {
             match fs::remove_dir_all(data_local_dir().unwrap().join("Rare").join("Python")) {
@@ -295,6 +335,7 @@ pub fn install(event_sink: ExtEventSink, update: bool, dl_url: String) {
 
         event_sink.submit_command(INSTALLATION_FINISHED, (), Target::Auto).expect("Failed to send command")
     });
+    true
 }
 
 #[cfg(not(windows))]

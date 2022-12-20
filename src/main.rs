@@ -12,7 +12,7 @@ use druid::{AppDelegate, AppLauncher, Command, DelegateCtx, Env, EventCtx, ExtEv
 use druid::commands::QUIT_APP;
 use druid::widget::{Button, Either, Flex, Label, LineBreaking, Padding, ViewSwitcher};
 use crate::config::Config;
-use crate::install::{AppState, CurrentScreen, ERROR, GitHubResponse, install, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_FINISHED, Version};
+use crate::install::{AppState, CurrentScreen, ERROR, GitHubResponse, install, STARTUP_ERROR, STARTUP_READY, uninstall, UNINSTALL_ERROR, UNINSTALL_FINISHED, Version};
 
 
 const WINDOW_TITLE: LocalizedString<AppState> = LocalizedString::new("Rare Updater");
@@ -22,7 +22,7 @@ pub fn main() {
     let main_window = WindowDesc::new(main_widget)
         .title(WINDOW_TITLE).resizable(false)
         .window_size((400.0, 400.0));
-        
+
     let config = Config::read();
     let initial_state = AppState::new(config.installed_version);
 
@@ -73,6 +73,12 @@ impl AppDelegate<AppState> for Delegate {
             data.latest_rare_version = Version::from_string(gh_resp.tag_name.clone());
             data.installed_version = Version::from_string(config.installed_version.clone());
             data.download_link = Some(dl_link);
+
+            if !Version::eq(&data.latest_rare_version, &data.installed_version) && false {
+                data.current_screen = CurrentScreen::Install;
+                data.installing = true;
+                //  install(, true, data.download_link.clone().unwrap())
+            }
             if !config.installed {
                 data.current_screen = CurrentScreen::Install
             } else {
@@ -97,8 +103,11 @@ impl AppDelegate<AppState> for Delegate {
                     Handled::Yes
                 }
             }
-        }
-        else{
+        } else if let Some(err) = cmd.get(UNINSTALL_ERROR) {
+            data.set_error_string(err.to_string());
+            data.installing = false;
+            Handled::Yes
+        } else {
             Handled::No
         }
     }
@@ -150,11 +159,9 @@ fn main_widget() -> impl Widget<AppState> {
     return Flex::column()
         .with_child(title_label)
         .with_child(page_switch);
-
 }
 
 fn installed_screen() -> impl Widget<AppState> {
-
     let version_row = Either::new(
         |data: &AppState, _| {
             !Version::eq(&data.installed_version, &data.latest_rare_version)
@@ -170,9 +177,11 @@ fn installed_screen() -> impl Widget<AppState> {
             .with_child(
                 Button::new("Update")
                     .on_click(|ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
-                        data.current_screen = CurrentScreen::Install;
-                        data.installing = true;
-                        install(ctx.get_external_handle(), true, data.download_link.clone().unwrap())
+                        let installs = install(ctx.get_external_handle(), true, data.download_link.clone().unwrap());
+                        if installs {
+                            data.current_screen = CurrentScreen::Install;
+                            data.installing = true;
+                        }
                     })
             ),
         Label::new(|data: &AppState, _env: &Env| { format!("Version {} installed", data.installed_version.to_string()) }),
@@ -190,18 +199,21 @@ fn installed_screen() -> impl Widget<AppState> {
                                        Flex::column().with_child(Button::new("Uninstall")
                                            .on_click(
                                                |ctx: &mut EventCtx, data: &mut AppState, _env: &Env| {
-                                                   data.installing = true;
-                                                   println!("Uninstall Rare");
-                                                   uninstall(ctx.get_external_handle(), false)
+                                                   if uninstall(ctx.get_external_handle(), false) {
+                                                       data.installing = true;
+                                                       println!("Uninstall Rare");
+                                                   }
                                                }
                                            )).with_child(launch_button),
                                        Label::new("Uninstalling"),
     );
 
-
+    let mut info_text = Label::new(|data: &AppState, _: &Env| { data.error_string.to_string() });
+    info_text.set_line_break_mode(LineBreaking::WordWrap);
     let layout = Flex::column()
         .with_child(version_row)
-        .with_child(uninstall_button);
+        .with_child(uninstall_button)
+        .with_child(info_text);
 
     return layout;
 }
